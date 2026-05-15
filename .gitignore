@@ -1,0 +1,5 @@
+pass/MemoryAnalysisOnlinePass/build/
+build/
+*.bc
+*.out
+*.ll
