@@ -2,6 +2,7 @@
 
 pass="$1"
 testfile="$2"
+runtime_file="$3"
 base="${testfile%.*}"
 bc_file="$base.bc"
 
@@ -37,5 +38,5 @@ opt -load-pass-plugin "$pass_dir/build/lib$pass.so" \
     -passes="$pass" \
     "test/$bc_file" \
     -o "test/instrumented.bc"
-clang++ test/instrumented.bc src/live_runtime.cpp -o test/a.out
+clang++ test/instrumented.bc src/$runtime_file -o test/a.out
 ./test/a.out
