@@ -102,7 +102,6 @@ bool new_instfetch_block(void* pc) {
         return true;
     }
     return false;
-
 }
 
 

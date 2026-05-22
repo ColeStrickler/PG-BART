@@ -198,6 +198,7 @@ Cache::~Cache()
 
 CacheAccessInfo Cache::Load(ReadAccess load)
 {
+    printf("LOAD()\n");
     CacheAccessInfo access_info;
 
     ACCESS_RESULT access_res = CheckHit(load.m_Addr); // not dealing with any un-aligned loads for now.
@@ -351,7 +352,6 @@ MemoryModel* g_MemoryModel;
 MemoryModel::MemoryModel()
 {
     printf("MemoryModel()\n");
-
     for (int i = 0; i < 2; i++)
         m_Cache.push_back(new Cache(64, 256*(i+1), 4, 1, REPLACEMENT_POLICY::RANDOM));
 }
