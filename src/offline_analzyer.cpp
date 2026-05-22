@@ -94,9 +94,9 @@ OfflineAnalyzer::~OfflineAnalyzer()
 
 
 #define EVENT2ENUM(event_type) \
-    (event_type == "load" ? EVENT::READ : \
-    (event_type == "inst" ? EVENT::INST : \
-    (event_type == "store" ? EVENT::WRITE : \
+    (event_type == "l" ? EVENT::READ : \
+    (event_type == "i" ? EVENT::INST : \
+    (event_type == "s" ? EVENT::WRITE : \
     (assert(false && "EVENT2ENUM->Unknown event_type!"), EVENT::WRITE))))
 bool OfflineAnalyzer::ConsumeEvent()
 {
@@ -169,12 +169,15 @@ void OfflineAnalyzer::DispatchRead()
     /*
         Read from l1d
     */
-    uint64_t load_addr = std::stoull(m_CSVReader->get("addr"));
+    uint64_t load_addr = decodeBase64(m_CSVReader->get("addr"));
     ReadAccess load_acc = {.m_Addr=load_addr, .m_LoadSize=8};
     auto l1d_res = L1D_LOAD(load_acc);
     if (l1d_res.m_Result == ACCESS_RESULT::HIT) // If we hit, there is no evictions
-        return;
+    {
 
+        return;
+    }
+    //printf("l1 miss\n");
     auto& evicted = l1d_res.m_Evicted.m_Evicted;
     
 
@@ -185,41 +188,38 @@ void OfflineAnalyzer::DispatchRead()
             1b) if write back evicts line, write back the l2 evicted line to DRAM
         2. issue a read for the original request to the l2
     */
-
     if (evicted.m_Dirty && evicted.m_Valid)
     {
         auto l2_res1 = L2_WRITE(EVICTED_2_WB(evicted));
+        if (l2_res1.m_Result == ACCESS_RESULT::MISS_ALLOCATE)
+            assert(false);
+        
+
         auto& l2_evicted_1 = l2_res1.m_Evicted.m_Evicted;
         if (l2_evicted_1.m_Dirty && l2_evicted_1.m_Valid)
-        {
             DRAM_WRITE();
-            InvalidateIfNecessary(l2_evicted_1.m_Addr);
-        }
+        InvalidateIfNecessary(l2_evicted_1.m_Addr);
+        
     }
 
     ReadAccess l2_load_acc = {.m_Addr=load_addr, .m_LoadSize=64};
+   
     auto l2_load_res = L2_LOAD(l2_load_acc);
 
-    if (l2_load_res.m_Effects == ACCESS_RESULT::HIT)
+    if (l2_load_res.m_Result == ACCESS_RESULT::HIT)
         return;
+    
 
-
+ //   printf("L2 MISS\n");
     /*
         Now handle misses/evictions at the l2 from the original load
     */
 
     auto& evicted_l2 = l2_load_res.m_Evicted.m_Evicted;
     if (evicted_l2.m_Dirty && evicted_l2.m_Valid)
-    {
-        auto l2_res2 = l2->Store(EVICTED_2_WB(evicted_l2));
-        auto& l2_evicted_2 = l2_res2.m_Evicted.m_Evicted;
-        if (l2_evicted_2.m_Dirty && l2_evicted_2.m_Valid)
-        {
-            DRAM_WRITE();
-            InvalidateIfNecessary(l2_evicted_2.m_Addr);
-        }
-    }
+        DRAM_WRITE();
 
+    InvalidateIfNecessary(evicted_l2.m_Addr);
     // Since we missed in the L2, the original read now must go to DRAM
     DRAM_LOAD();
 
@@ -240,11 +240,11 @@ void OfflineAnalyzer::DispatchWrite()
 #define DRAM_WRITE() m_DRAMWrites++
 #define EVICTED_2_WB(evicted) WriteAccess{.m_Addr=evicted.m_Addr, .m_StoreSize=64}
 
-
+   // printf("write()\n");
     /*
         Read from l1d
     */
-    uint64_t load_addr = std::stoull(m_CSVReader->get("addr"));
+    uint64_t load_addr = decodeBase64(m_CSVReader->get("addr"));
     WriteAccess load_acc = {.m_Addr=load_addr, .m_StoreSize=8};
     auto l1d_res = L1D_WRITE(load_acc);
     if (l1d_res.m_Result == ACCESS_RESULT::HIT) // If we hit, there is no evictions
@@ -264,18 +264,19 @@ void OfflineAnalyzer::DispatchWrite()
     if (evicted.m_Dirty && evicted.m_Valid)
     {
         auto l2_res1 = L2_WRITE(EVICTED_2_WB(evicted));
+        if (l2_res1.m_Result == ACCESS_RESULT::MISS_ALLOCATE)
+            assert(false);
+        
         auto& l2_evicted_1 = l2_res1.m_Evicted.m_Evicted;
         if (l2_evicted_1.m_Dirty && l2_evicted_1.m_Valid)
-        {
             DRAM_WRITE();
-            InvalidateIfNecessary(l2_evicted_1.m_Addr);
-        }
+        InvalidateIfNecessary(l2_evicted_1.m_Addr);
     }
 
     ReadAccess l2_load_acc = {.m_Addr=load_addr, .m_LoadSize=64};
     auto l2_load_res = L2_LOAD(l2_load_acc);
 
-    if (l2_load_res.m_Effects == ACCESS_RESULT::HIT)
+    if (l2_load_res.m_Result == ACCESS_RESULT::HIT)
         return;
 
 
@@ -283,18 +284,11 @@ void OfflineAnalyzer::DispatchWrite()
         Now handle misses/evictions at the l2 from the original load
     */
 
+
     auto& evicted_l2 = l2_load_res.m_Evicted.m_Evicted;
     if (evicted_l2.m_Dirty && evicted_l2.m_Valid)
-    {
-        auto l2_res2 = l2->Store(EVICTED_2_WB(evicted_l2));
-        auto& l2_evicted_2 = l2_res2.m_Evicted.m_Evicted;
-        if (l2_evicted_2.m_Dirty && l2_evicted_2.m_Valid)
-        {
-            DRAM_WRITE();
-            InvalidateIfNecessary(l2_evicted_2.m_Addr);
-        }
-            
-    }
+        DRAM_WRITE();
+    InvalidateIfNecessary(evicted_l2.m_Addr);
 
     // Since we missed in the L2, the original read now must go to DRAM
     DRAM_LOAD();
@@ -317,11 +311,10 @@ void OfflineAnalyzer::DispatchInstructionFetch()
 #define DRAM_WRITE() m_DRAMWrites++
 #define EVICTED_2_WB(evicted) WriteAccess{.m_Addr=evicted.m_Addr, .m_StoreSize=64}
     
-
     /*
         Read from l1d
     */
-    uint64_t load_addr = std::stoull(m_CSVReader->get("pc")); // we use PC as the fetch addr
+    uint64_t load_addr = decodeBase64(m_CSVReader->get("pc")); // we use PC as the fetch addr
         
     ReadAccess load_acc = {.m_Addr=load_addr, .m_LoadSize=8};
     auto l1d_res = L1I_LOAD(load_acc);
@@ -343,35 +336,30 @@ void OfflineAnalyzer::DispatchInstructionFetch()
     if (evicted.m_Dirty && evicted.m_Valid)
     {
         auto l2_res1 = L2_WRITE(EVICTED_2_WB(evicted));
+        assert(l2_res1.m_Result == ACCESS_RESULT::HIT);
+
+
         auto& l2_evicted_1 = l2_res1.m_Evicted.m_Evicted;
         if (l2_evicted_1.m_Dirty && l2_evicted_1.m_Valid)
-        {
-            InvalidateIfNecessary(l2_evicted_1.m_Addr);
             DRAM_WRITE();
-        }
+        InvalidateIfNecessary(l2_evicted_1.m_Addr);
     }
 
     ReadAccess l2_load_acc = {.m_Addr=load_addr, .m_LoadSize=64};
     auto l2_load_res = L2_LOAD(l2_load_acc);
     
-    if (l2_load_res.m_Effects == ACCESS_RESULT::HIT)
+    if (l2_load_res.m_Result == ACCESS_RESULT::HIT)
         return;
 
     /*
         Now handle misses/evictions at the l2 from the original load
     */
 
+
     auto& evicted_l2 = l2_load_res.m_Evicted.m_Evicted;
     if (evicted_l2.m_Dirty && evicted_l2.m_Valid)
-    {
-        auto l2_res2 = l2->Store(EVICTED_2_WB(evicted_l2));
-        auto& l2_evicted_2 = l2_res2.m_Evicted.m_Evicted;
-        if (l2_evicted_2.m_Dirty && l2_evicted_2.m_Valid)
-        {
-            DRAM_WRITE();
-            InvalidateIfNecessary(l2_evicted_2.m_Addr);
-        }
-    }
+        DRAM_WRITE();
+    InvalidateIfNecessary(evicted_l2.m_Addr);
 
     // Since we missed in the L2, the original read now must go to DRAM
     DRAM_LOAD();

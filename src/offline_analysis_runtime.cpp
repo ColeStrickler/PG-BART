@@ -8,6 +8,8 @@
 #include <string>
 #include <stdint.h>
 
+#include "base64.hpp"
+
 class CSVWriter
 {
 public:
@@ -58,15 +60,15 @@ CSVWriter* g_CSV_Writer;
 
 
 inline std::string load_to_csv(void* addr, void* pc) {
-    return "load," + std::to_string(reinterpret_cast<uint64_t>(addr)) + "," + std::to_string(reinterpret_cast<uint64_t>(pc));
+    return "l," + encodeBase64(reinterpret_cast<uint64_t>(addr)) + "," + std::to_string(reinterpret_cast<uint64_t>(pc));
 }
 
 inline std::string store_to_csv(void* addr, void* pc) {
-    return "store," + std::to_string(reinterpret_cast<uint64_t>(addr)) + "," + std::to_string(reinterpret_cast<uint64_t>(pc));
+    return "s," + encodeBase64(reinterpret_cast<uint64_t>(addr)) + "," + std::to_string(reinterpret_cast<uint64_t>(pc));
 }
 
 inline std::string instfetch_to_csv(void* addr, void* pc) {
-    return "inst," + std::to_string(reinterpret_cast<uint64_t>(addr)) + "," + std::to_string(reinterpret_cast<uint64_t>(pc));
+    return "i," + encodeBase64(reinterpret_cast<uint64_t>(addr)) + "," + std::to_string(reinterpret_cast<uint64_t>(pc));
 }
 
 

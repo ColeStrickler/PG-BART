@@ -4,7 +4,7 @@
 # =============================================
 
 CXX = g++
-CXXFLAGS = -std=c++17 -O2 -Wall -Wextra -g
+CXXFLAGS = -std=c++17 -O3 -Wall -Wextra -g
 LDFLAGS = 
 
 # Directories
@@ -14,7 +14,8 @@ TARGET = offline_analyzer
 
 # Source files for offline_analyzer
 SRCS = $(SRC_DIR)/offline_analzyer.cpp \
-       $(SRC_DIR)/cache.cpp
+       $(SRC_DIR)/cache.cpp \
+	   $(SRC_DIR)/base64.cpp
 
 # Object files
 OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SRCS))

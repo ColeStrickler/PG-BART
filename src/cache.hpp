@@ -111,6 +111,7 @@ public:
 
 private:
     void InitStore();
+    void SetDirty(uint64_t& addr);
     ACCESS_RESULT CheckHit(uint64_t addr);
     ReplacementResult AllocateLine(uint64_t addr, bool write);
 

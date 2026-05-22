@@ -50,7 +50,7 @@ void matmul_tiled(const Matrix& A, const Matrix& B, Matrix& C, int n, int tile_s
 
 int main() {
     const int N = 256;           // Matrix size (N x N)
-    const int TILE_SIZE = 32;     // <<< Change this to test different blocking factors
+    const int TILE_SIZE = 4;     // <<< Change this to test different blocking factors
 
     std::cout << "Matrix size: " << N << " x " << N << "\n";
     std::cout << "Tile size: " << TILE_SIZE << "\n\n";

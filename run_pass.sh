@@ -32,10 +32,10 @@ make
 cd "$curr_dir"
 
 
-clang++ -O1 -emit-llvm -c "test/$testfile" -o "test/$bc_file"
+clang++ -O3 -emit-llvm -c "test/$testfile" -o "test/$bc_file"
 opt -load-pass-plugin "$pass_dir/build/lib$pass.so" \
     -passes="$pass" \
     "test/$bc_file" \
     -o "test/instrumented.bc"
-clang++ test/instrumented.bc src/$runtime_file -o test/a.out
+clang++ test/instrumented.bc src/$runtime_file src/base64.cpp -o test/a.out
 ./test/a.out

@@ -4,7 +4,7 @@
 
 #include "cache.hpp"
 
-
+#include "base64.hpp"
 
 
 REPLACEMENT_POLICY StringToReplacementPolicy(const std::string& str) {

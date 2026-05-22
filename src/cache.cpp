@@ -103,9 +103,14 @@ CacheAccessInfo Cache::Store(WriteAccess store)
     ACCESS_RESULT access_res = CheckHit(store.m_Addr); // not dealing with any un-aligned loads for now.
     access_info.m_Result = access_res;
     if (access_res == ACCESS_RESULT::HIT) // probably want to insert an "UpdatePolicyHit()" type function
+    {
         access_info.m_Effects = ACCESS_EFFECTS::NONE; 
+        SetDirty(store.m_Addr);
+    }
     else
     {
+        if (m_SetCount == 64)
+            printf("STORE!\n");
         ReplacementResult result =  AllocateLine(store.m_Addr, true);
         access_info.m_Evicted = result;
     }
@@ -124,6 +129,11 @@ void Cache::InitStore()
         for (uint32_t s = 0; s < m_SetCount; ++s)
         {
             m_CacheStore[b][s].resize(m_WayCount);
+            // Zero-initialize all cache lines
+            for (auto& line : m_CacheStore[b][s])
+            {
+                line = CacheLineStore{};   // This forces zero-initialization
+            }
         }
     }
 }
@@ -159,13 +169,29 @@ void Cache::InvalidateIfNecessary(uint64_t addr)
 
     for (auto& line: cache_set) {
         if (line.m_Tag == tag && line.m_Valid)
+        {
             line.m_Valid = false;
+            break;
+        }
     }
 
 }
 
+void Cache::SetDirty(uint64_t& addr)
+{
+    uint64_t tag = BIT_EXTRACT(addr, m_TagBitsStart, m_TagBits);
+    uint32_t set = BIT_EXTRACT(addr, m_SetBitsStart, m_SetBits);
+    uint32_t bank = BIT_EXTRACT(addr, m_BankBitsStart, m_BankBits);
+    std::vector<CacheLineStore>& cache_set = m_CacheStore[bank][set];
+    for (auto& line: cache_set) {
+        if (line.m_Tag == tag)
+        {
+            line.m_Dirty = true;
+            break;
+        }
+    }
 
-
+}
 
 ReplacementResult Cache::AllocateLine(uint64_t addr, bool write)
 {
