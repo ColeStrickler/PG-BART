@@ -18,8 +18,8 @@
 
         "l2" : {
             "line_size": 64,
-            "sets":  32,
-            "ways":  4,
+            "sets":  128,
+            "ways":  8,
             "banks": 1,
             "policy": "RANDOM"
         }

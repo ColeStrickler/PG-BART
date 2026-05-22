@@ -99,6 +99,7 @@ private:
     void DispatchRead(); 
     void DispatchWrite(); 
     void DispatchInstructionFetch();
+    void InvalidateIfNecessary(uint64_t addr);
 
     // Members
     CSVLineReader* m_CSVReader;

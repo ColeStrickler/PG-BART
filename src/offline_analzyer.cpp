@@ -94,9 +94,9 @@ OfflineAnalyzer::~OfflineAnalyzer()
 
 
 #define EVENT2ENUM(event_type) \
-    (event_type == "read" ? EVENT::READ : \
+    (event_type == "load" ? EVENT::READ : \
     (event_type == "inst" ? EVENT::INST : \
-    (event_type == "write" ? EVENT::WRITE : \
+    (event_type == "store" ? EVENT::WRITE : \
     (assert(false && "EVENT2ENUM->Unknown event_type!"), EVENT::WRITE))))
 bool OfflineAnalyzer::ConsumeEvent()
 {
@@ -191,7 +191,10 @@ void OfflineAnalyzer::DispatchRead()
         auto l2_res1 = L2_WRITE(EVICTED_2_WB(evicted));
         auto& l2_evicted_1 = l2_res1.m_Evicted.m_Evicted;
         if (l2_evicted_1.m_Dirty && l2_evicted_1.m_Valid)
+        {
             DRAM_WRITE();
+            InvalidateIfNecessary(l2_evicted_1.m_Addr);
+        }
     }
 
     ReadAccess l2_load_acc = {.m_Addr=load_addr, .m_LoadSize=64};
@@ -211,7 +214,10 @@ void OfflineAnalyzer::DispatchRead()
         auto l2_res2 = l2->Store(EVICTED_2_WB(evicted_l2));
         auto& l2_evicted_2 = l2_res2.m_Evicted.m_Evicted;
         if (l2_evicted_2.m_Dirty && l2_evicted_2.m_Valid)
+        {
             DRAM_WRITE();
+            InvalidateIfNecessary(l2_evicted_2.m_Addr);
+        }
     }
 
     // Since we missed in the L2, the original read now must go to DRAM
@@ -260,7 +266,10 @@ void OfflineAnalyzer::DispatchWrite()
         auto l2_res1 = L2_WRITE(EVICTED_2_WB(evicted));
         auto& l2_evicted_1 = l2_res1.m_Evicted.m_Evicted;
         if (l2_evicted_1.m_Dirty && l2_evicted_1.m_Valid)
+        {
             DRAM_WRITE();
+            InvalidateIfNecessary(l2_evicted_1.m_Addr);
+        }
     }
 
     ReadAccess l2_load_acc = {.m_Addr=load_addr, .m_LoadSize=64};
@@ -280,7 +289,11 @@ void OfflineAnalyzer::DispatchWrite()
         auto l2_res2 = l2->Store(EVICTED_2_WB(evicted_l2));
         auto& l2_evicted_2 = l2_res2.m_Evicted.m_Evicted;
         if (l2_evicted_2.m_Dirty && l2_evicted_2.m_Valid)
+        {
             DRAM_WRITE();
+            InvalidateIfNecessary(l2_evicted_2.m_Addr);
+        }
+            
     }
 
     // Since we missed in the L2, the original read now must go to DRAM
@@ -332,7 +345,10 @@ void OfflineAnalyzer::DispatchInstructionFetch()
         auto l2_res1 = L2_WRITE(EVICTED_2_WB(evicted));
         auto& l2_evicted_1 = l2_res1.m_Evicted.m_Evicted;
         if (l2_evicted_1.m_Dirty && l2_evicted_1.m_Valid)
+        {
+            InvalidateIfNecessary(l2_evicted_1.m_Addr);
             DRAM_WRITE();
+        }
     }
 
     ReadAccess l2_load_acc = {.m_Addr=load_addr, .m_LoadSize=64};
@@ -351,7 +367,10 @@ void OfflineAnalyzer::DispatchInstructionFetch()
         auto l2_res2 = l2->Store(EVICTED_2_WB(evicted_l2));
         auto& l2_evicted_2 = l2_res2.m_Evicted.m_Evicted;
         if (l2_evicted_2.m_Dirty && l2_evicted_2.m_Valid)
+        {
             DRAM_WRITE();
+            InvalidateIfNecessary(l2_evicted_2.m_Addr);
+        }
     }
 
     // Since we missed in the L2, the original read now must go to DRAM
@@ -364,6 +383,12 @@ void OfflineAnalyzer::DispatchInstructionFetch()
 #undef DRAM_LOAD
 #undef DRAM_WRITE
 #undef EVICTED_2_WB
+}
+
+void OfflineAnalyzer::InvalidateIfNecessary(uint64_t addr)
+{
+    l1d->InvalidateIfNecessary(addr);
+    l1i->InvalidateIfNecessary(addr);
 }
 
 int main()

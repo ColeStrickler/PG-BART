@@ -76,6 +76,8 @@ Cache::~Cache()
 {
 }
 
+
+
 CacheAccessInfo Cache::Load(ReadAccess load)
 {
         
@@ -147,6 +149,23 @@ ACCESS_RESULT Cache::CheckHit(uint64_t addr)
    
     return ACCESS_RESULT::MISS_ALLOCATE;
 }
+
+void Cache::InvalidateIfNecessary(uint64_t addr)
+{
+    uint64_t tag = BIT_EXTRACT(addr, m_TagBitsStart, m_TagBits);
+    uint32_t set = BIT_EXTRACT(addr, m_SetBitsStart, m_SetBits);
+    uint32_t bank = BIT_EXTRACT(addr, m_BankBitsStart, m_BankBits);
+    std::vector<CacheLineStore>& cache_set = m_CacheStore[bank][set];
+
+    for (auto& line: cache_set) {
+        if (line.m_Tag == tag && line.m_Valid)
+            line.m_Valid = false;
+    }
+
+}
+
+
+
 
 ReplacementResult Cache::AllocateLine(uint64_t addr, bool write)
 {

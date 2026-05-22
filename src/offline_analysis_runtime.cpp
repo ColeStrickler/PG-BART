@@ -115,6 +115,7 @@ void bb_entry_callback(uint64_t bb_id)
 }
 
 __attribute__((constructor))
+extern "C"
 void runtime_init()
 {
     printf("CSV INIT\n");

@@ -106,11 +106,9 @@ public:
     ~Cache();
 
     CacheAccessInfo Load(ReadAccess load);
-
-
-
     CacheAccessInfo Store(WriteAccess store);
-    
+    void InvalidateIfNecessary(uint64_t addr);
+
 private:
     void InitStore();
     ACCESS_RESULT CheckHit(uint64_t addr);

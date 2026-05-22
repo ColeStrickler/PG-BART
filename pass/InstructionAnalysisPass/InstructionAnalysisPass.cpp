@@ -1,15 +1,16 @@
-#include "llvm/IR/PassManager.h"
+#include "llvm/Plugins/PassPlugin.h"
+#include "llvm/Passes/PassBuilder.h"
+
+// Correct locations for LLVM 23
+#include "llvm/IR/PassManager.h"      // ← This is the correct one
 #include "llvm/IR/Function.h"
 #include "llvm/IR/BasicBlock.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Passes/PassPlugin.h"
-#include "llvm/Passes/PassBuilder.h"
 #include "llvm/IR/CFG.h"
 #include "llvm/IR/IRBuilder.h"
 
-
-
-
+// Support
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/CommandLine.h"
 
 using namespace llvm;
 
