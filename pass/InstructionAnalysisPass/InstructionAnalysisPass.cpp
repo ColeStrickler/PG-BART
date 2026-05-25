@@ -22,29 +22,77 @@ struct InstructionAnalysisPass : PassInfoMixin<InstructionAnalysisPass> {
         LLVMContext &Ctx = M.getContext();
 
         FunctionCallee BBFn = CreateBBFunctionCallbackRef(M);
+        FunctionCallee FuncExitFn = CreateFuncExitFunctionCallbackRef(M);
+        FunctionCallee FuncEntryFn = CreateFuncEntryFunctionCallbackRef(M);
 
         for (Function &F : M) {
             std::string func_name = F.getName().str();
 
             if (func_name == "bb_entry_callback")
                 continue;
-
-
-            if (F.isDeclaration())
+            if (func_name == "function_entry_callback")
+                continue;
+            if (func_name == "function_exit_callback")
                 continue;
 
+
+
+                // Skip our own instrumentation functions
+            if (func_name == "bb_entry_callback" ||
+                func_name == "function_entry_callback" ||
+                func_name == "function_exit_callback")
+                continue;
+
+            // Skip library / std functions
+            if (F.isDeclaration() || F.isIntrinsic()) {
+                continue;
+            }
+
+            if (func_name.rfind("_ZSt", 0) == 0 ||      // std:: 
+                func_name.rfind("_ZNSt", 0) == 0 || 
+                func_name.rfind("std::", 0) == 0 ||
+                func_name.find("__gnu_cxx") != std::string::npos ||
+                func_name.find("operator new") != std::string::npos ||
+                func_name.find("operator delete") != std::string::npos) {
+                continue;
+            }
+
+
+                IRBuilder<> EntryBuilder(&*F.getEntryBlock().getFirstInsertionPt());
+            EntryBuilder.CreateCall(FuncEntryFn, {});
+
             for (BasicBlock &BB : F) {
+                
+
+                // Exit - before every return
+                if (ReturnInst *Ret = dyn_cast<ReturnInst>(BB.getTerminator())) {
+                    IRBuilder<> ExitBuilder(Ret);
+                    ExitBuilder.CreateCall(FuncExitFn, {});
+                }
+
                 uint64_t BBID = BBIDCounter++;
+
+                // Count instructions in this basic block
+                uint64_t numInstructions = 0;
+                for (Instruction &I : BB) {
+                    numInstructions++;
+                }
+
                 IRBuilder<> Builder(&*BB.getFirstInsertionPt());
 
                 Value *BBIDVal =
                     Builder.getInt64(BBID);
 
-               Builder.CreateCall(BBFn, { BBIDVal });
+                Value *numInstVal =
+                    Builder.getInt64(BBID);
+
+               Builder.CreateCall(BBFn, { numInstVal });
+
+
+
+               
             }
         }
-
-
 
         return PreservedAnalyses::all();
     }
@@ -62,6 +110,35 @@ struct InstructionAnalysisPass : PassInfoMixin<InstructionAnalysisPass> {
             )
         );
     }
+
+
+    FunctionCallee CreateFuncEntryFunctionCallbackRef(Module& M) {
+        LLVMContext &Ctx = M.getContext();
+        return M.getOrInsertFunction(
+            "function_entry_callback",
+            FunctionType::get(
+                Type::getVoidTy(Ctx),
+                {
+                },
+                false
+            )
+        );
+    }
+
+    FunctionCallee CreateFuncExitFunctionCallbackRef(Module& M) {
+        LLVMContext &Ctx = M.getContext();
+        return M.getOrInsertFunction(
+            "function_exit_callback",
+            FunctionType::get(
+                Type::getVoidTy(Ctx),
+                {
+                },
+                false
+            )
+        );
+    }
+
+
 
     
     FunctionCallee CreateRuntimeInitFunctionCallbackRef(Module& M) {

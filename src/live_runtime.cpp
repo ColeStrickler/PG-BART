@@ -142,12 +142,29 @@ void record_store(void* addr, void* pc)
 
 
 extern "C"
-void bb_entry_callback(uint64_t bb_id)
+void bb_entry_callback(uint64_t bb_inst_count)
 {
     void* pc = (void*)((uint64_t)__builtin_return_address(0) - m_LoadBias);
-
-    m_OnlineAnalyzer->RunEvent(EVENT::INST, pc);
+    m_OnlineAnalyzer->RunEvent(EVENT::INST, pc, (void*)bb_inst_count);
 }
+
+
+
+extern "C"
+void function_entry_callback()
+{
+    void* pc = (void*)((uint64_t)__builtin_return_address(0) - m_LoadBias);
+    m_OnlineAnalyzer->PushContext(EVENT::FUNC_ENTRY, pc);
+}
+
+extern "C"
+void function_exit_callback()
+{
+    void* pc = (void*)((uint64_t)__builtin_return_address(0) - m_LoadBias);
+    m_OnlineAnalyzer->PopContext(EVENT::FUNC_EXIT, pc);
+}
+
+
 
 
 
@@ -156,8 +173,8 @@ extern "C"
 void runtime_init()
 {
     m_LoadBias = compute_load_bias("./test/a.out");
-    printf("CSV INIT swag\n");
     m_OnlineAnalyzer = new OnlineAnalyzer();
+    printf("RUNTIME INIT swag\n");
 }
 
 

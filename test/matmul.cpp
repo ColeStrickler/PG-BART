@@ -75,7 +75,7 @@ int main() {
 
     auto start = std::chrono::high_resolution_clock::now();
     
-     matmul_tiled(A, B, C, N, TILE_SIZE);
+    matmul_tiled(A, B, C, N, TILE_SIZE);
     //matmul_naive(A,B,C,N);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);

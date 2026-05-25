@@ -6,7 +6,7 @@
 #include "elf_info.hpp"
 #include "base64.hpp"
 #include <chrono>
-
+#include <stack>
 REPLACEMENT_POLICY StringToReplacementPolicy(const std::string& str);
 
 
@@ -51,7 +51,42 @@ enum EVENT
 {
     READ,
     WRITE,
-    INST
+    INST,
+    FUNC_ENTRY,
+    FUNC_EXIT
+};
+
+
+struct FuncResults
+{
+    float m_DRAMWritePerInst = 0.0f;
+    float m_DRAMReadPerInst = 0.0f;
+    float m_L2ReadPerInst = 0.0f;
+    float m_L2WritesPerInst = 0.0f;
+
+        // Pretty print
+    friend std::ostream& operator<<(std::ostream& os, const FuncResults& r)
+    {
+        os << std::fixed << std::setprecision(4);
+        os << "FuncResults {\n";
+        os << "  DRAM Read / Inst   : " << r.m_DRAMReadPerInst   << "\n";
+        os << "  DRAM Write / Inst  : " << r.m_DRAMWritePerInst  << "\n";
+        os << "  L2 Read / Inst     : " << r.m_L2ReadPerInst     << "\n";
+        os << "  L2 Write / Inst    : " << r.m_L2WritesPerInst   << "\n";
+        os << "}";
+        return os;
+    }
+};
+
+
+struct FuncContext
+{
+    uint64_t m_DRAMWrites;
+    uint64_t m_DRAMReads;
+    uint64_t m_L2Reads;
+    uint64_t m_L2Writes;
+    uint64_t m_InstructionsExecuted;
+    std::string m_FuncName;
 };
 
 
@@ -72,6 +107,14 @@ public:
     */
     void RunEvent(EVENT type, void* pc, void* addr = 0x0);
 
+    void PushContext(EVENT type, void* pc);
+    void PopContext(EVENT type, void* pc);
+    void LogContextResults(FuncContext& ctx);
+    FuncContext& GetCurrentContext();
+
+    
+
+
 
     std::string PrintStats() const;
     std::unordered_map<std::string, uint64_t> m_FuncDRAMInfo;
@@ -86,10 +129,11 @@ private:
     uint64_t m_L2Reads;
     uint64_t m_L2Writes;
     std::vector<FunctionInfo> m_ElfBinaryFunctionInfo;
+    std::stack<FuncContext> m_ContextStack;
     
 
 
-
+    std::unordered_map<std::string, FuncResults> m_FunctionResults;
 
 
     //std::unordered_map<std::string, uint64_t> m_FuncMemoryCount;

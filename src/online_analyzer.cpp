@@ -60,16 +60,11 @@ std::cout << "Sum of all functions L2   = " << sumL2   << "  (global L2   = " <<
 
 
     std::cout << PrintStats() << "\n";
-    for (auto& m: m_FuncDRAMInfo)
+    for (auto& m: m_FunctionResults)
     {
-        printf("Function: %s. DRAM %lld\n", m.first.c_str(), m.second);
+        std::cout << m.first << ": " << m.second << std::endl;
     }
 
-
-    for (auto& m: m_FuncL2Info)
-    {
-        printf("Function: %s. L2 %lld\n", m.first.c_str(), m.second);
-    }
 }
 
 
@@ -81,6 +76,7 @@ void OnlineAnalyzer::RunEvent(EVENT type, void *pc, void *addr)
     m_PC = pc;
     m_CurrMemAddr = addr;
     m_CurrentFunc = findFunction(m_ElfBinaryFunctionInfo, (uint64_t)pc);
+  
     switch(type)
     {
         case EVENT::READ:    DispatchRead(); break;
@@ -94,8 +90,52 @@ void OnlineAnalyzer::RunEvent(EVENT type, void *pc, void *addr)
     }
 }
 
+void OnlineAnalyzer::PushContext(EVENT type, void *pc)
+{
+    const FunctionInfo* fInfo = findFunction(m_ElfBinaryFunctionInfo, (uint64_t)pc);
+    if (!fInfo)
+        return;
+    
+    m_ContextStack.push({0, 0, 0, 0, 0, fInfo->name});
+}
+
+void OnlineAnalyzer::PopContext(EVENT type, void *pc)
+{
+    const FunctionInfo* fInfo = findFunction(m_ElfBinaryFunctionInfo, (uint64_t)pc);
+    if (!fInfo)
+        return;
+    
+    LogContextResults(GetCurrentContext());
+    m_ContextStack.pop();
+}
+
+void OnlineAnalyzer::LogContextResults(FuncContext &ctx)
+{
+    if (ctx.m_InstructionsExecuted == 0)
+        return;  // avoid division by zero
+
+    auto& results = m_FunctionResults[ctx.m_FuncName];
+
+    float inst = static_cast<float>(ctx.m_InstructionsExecuted);
+
+    results.m_DRAMReadPerInst   = std::max(results.m_DRAMReadPerInst,
+                                           static_cast<float>(ctx.m_DRAMReads) / inst);
+    results.m_DRAMWritePerInst  = std::max(results.m_DRAMWritePerInst,
+                                           static_cast<float>(ctx.m_DRAMWrites) / inst);
+    results.m_L2ReadPerInst     = std::max(results.m_L2ReadPerInst,
+                                           static_cast<float>(ctx.m_L2Reads) / inst);
+    results.m_L2WritesPerInst   = std::max(results.m_L2WritesPerInst,
+                                           static_cast<float>(ctx.m_L2Writes) / inst);
+}
 
 
+FuncContext &OnlineAnalyzer::GetCurrentContext()
+{
+    static FuncContext dummy;
+    if (!m_ContextStack.size())
+        return dummy;
+    return m_ContextStack.top();
+}
 
 std::string OnlineAnalyzer::PrintStats() const
 {
@@ -141,10 +181,10 @@ And to make sure we do not evict from L2 if a line is in L1, or to at least hand
 void OnlineAnalyzer::DispatchRead()
 {
 #define L1D_LOAD(read_acc) l1d->Load(read_acc)
-#define L2_LOAD(read_acc) l2->Load(read_acc); m_L2Reads++; if (func) {m_FuncL2Info[func->name]++;}
-#define L2_WRITE(store_acc) l2->Store(store_acc); m_L2Writes++; if (func) {m_FuncL2Info[func->name]++;}
-#define DRAM_LOAD()  if (func) { m_DRAMReads++; m_FuncDRAMInfo[func->name]++;}
-#define DRAM_WRITE()  if (func) {m_DRAMWrites++; m_FuncDRAMInfo[func->name]++;}
+#define L2_LOAD(read_acc) l2->Load(read_acc); m_L2Reads++; GetCurrentContext().m_L2Reads++;
+#define L2_WRITE(store_acc) l2->Store(store_acc); m_L2Writes++; GetCurrentContext().m_L2Writes++;
+#define DRAM_LOAD()  GetCurrentContext().m_DRAMReads++;
+#define DRAM_WRITE()  GetCurrentContext().m_DRAMWrites++;
 #define EVICTED_2_WB(evicted) WriteAccess{.m_Addr=evicted.m_Addr, .m_StoreSize=64}
 
 
@@ -225,10 +265,10 @@ void OnlineAnalyzer::DispatchRead()
 void OnlineAnalyzer::DispatchWrite()
 {
 #define L1D_WRITE(store_acc) l1d->Store(store_acc)
-#define L2_LOAD(read_acc) l2->Load(read_acc); m_L2Reads++; if (func) {m_FuncL2Info[func->name]++;}
-#define L2_WRITE(store_acc) l2->Store(store_acc); m_L2Writes++; if (func) {m_FuncL2Info[func->name]++;}
-#define DRAM_LOAD()  if (func) { m_DRAMReads++; m_FuncDRAMInfo[func->name]++;}
-#define DRAM_WRITE()  if (func) {m_DRAMWrites++; m_FuncDRAMInfo[func->name]++;}
+#define L2_LOAD(read_acc) l2->Load(read_acc); m_L2Reads++; GetCurrentContext().m_L2Reads++;
+#define L2_WRITE(store_acc) l2->Store(store_acc); m_L2Writes++; GetCurrentContext().m_L2Writes++;
+#define DRAM_LOAD()  GetCurrentContext().m_DRAMReads++;
+#define DRAM_WRITE()  GetCurrentContext().m_DRAMWrites++;
 #define EVICTED_2_WB(evicted) WriteAccess{.m_Addr=evicted.m_Addr, .m_StoreSize=64}
 
    // printf("write()\n");
@@ -301,11 +341,18 @@ void OnlineAnalyzer::DispatchWrite()
 void OnlineAnalyzer::DispatchInstructionFetch()
 {
 #define L1I_LOAD(read_acc) l1i->Load(read_acc)
-#define L2_LOAD(read_acc) l2->Load(read_acc); m_L2Reads++; if (func) {m_FuncL2Info[func->name]++;}
-#define L2_WRITE(store_acc) l2->Store(store_acc); m_L2Writes++; if (func) {m_FuncL2Info[func->name]++;}
-#define DRAM_LOAD()  if (func) { m_DRAMReads++; m_FuncDRAMInfo[func->name]++;}
-#define DRAM_WRITE()  if (func) {m_DRAMWrites++; m_FuncDRAMInfo[func->name]++;}
+#define L2_LOAD(read_acc) l2->Load(read_acc); m_L2Reads++; GetCurrentContext().m_L2Reads++;
+#define L2_WRITE(store_acc) l2->Store(store_acc); m_L2Writes++; GetCurrentContext().m_L2Writes++;
+#define DRAM_LOAD()  GetCurrentContext().m_DRAMReads++;
+#define DRAM_WRITE()  GetCurrentContext().m_DRAMWrites++;
 #define EVICTED_2_WB(evicted) WriteAccess{.m_Addr=evicted.m_Addr, .m_StoreSize=64}
+
+
+    /*
+        For inst fetch, we store the basic block inst count in the m_CurrADdr
+
+    */
+    GetCurrentContext().m_InstructionsExecuted += (uint64_t)m_CurrMemAddr;
     
     /*
         Read from l1i
