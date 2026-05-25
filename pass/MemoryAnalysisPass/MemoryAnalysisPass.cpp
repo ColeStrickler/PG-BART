@@ -12,8 +12,20 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/CommandLine.h"
 using namespace llvm;
-
+#include <iostream>
 namespace {
+
+
+
+bool isFromFile(Function &F, StringRef targetFile) {
+    if (auto *SP = F.getSubprogram()) {
+        auto *File = SP->getFile();
+        if (!File) return false;
+        std::cout << File->getFilename().str() << std::endl;
+        return File->getFilename().contains(targetFile);
+    }
+    return false;
+}
 
 struct MemoryAnalysisPass : PassInfoMixin<MemoryAnalysisPass> {
 
@@ -27,9 +39,12 @@ struct MemoryAnalysisPass : PassInfoMixin<MemoryAnalysisPass> {
 
         for (Function &F : M) {
             std::string func_name = F.getName().str();
-            if (func_name == "main")
-                InstallRuntimeInit(M, F);
 
+            if (func_name == "record_load")
+                continue;
+            if (func_name == "record_store")
+                continue;
+            std::cout << func_name << std::endl;
 
             if (F.isDeclaration())
                 continue;

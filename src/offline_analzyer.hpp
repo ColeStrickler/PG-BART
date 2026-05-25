@@ -3,9 +3,9 @@
 
 
 #include "cache.hpp"
-
+#include "elf_info.hpp"
 #include "base64.hpp"
-
+#include <chrono>
 
 REPLACEMENT_POLICY StringToReplacementPolicy(const std::string& str) {
     static std::unordered_map<std::string, REPLACEMENT_POLICY> mapping = {
@@ -70,7 +70,7 @@ enum EVENT
 class OfflineAnalyzer
 {
 public:
-    OfflineAnalyzer();
+    OfflineAnalyzer(const std::string& file);
     ~OfflineAnalyzer();
 
     /*
@@ -86,13 +86,21 @@ public:
 
 
     std::string PrintStats() const;
+    std::unordered_map<std::string, uint64_t> m_FuncDRAMInfo;
 private:
     // Statistics
     uint64_t m_DRAMWrites;
     uint64_t m_DRAMReads;
     uint64_t m_L2Reads;
     uint64_t m_L2Writes;
+    std::vector<FunctionInfo> m_ElfBinaryFunctionInfo;
+    
 
+
+
+
+
+    //std::unordered_map<std::string, uint64_t> m_FuncMemoryCount;
     
     // Methods
     CacheConfig GetCacheConfig(const std::string& cache) const;

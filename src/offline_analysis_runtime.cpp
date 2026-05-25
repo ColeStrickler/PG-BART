@@ -7,8 +7,35 @@
 #include <vector>
 #include <string>
 #include <stdint.h>
+#include "elf_info.hpp"
 
 #include "base64.hpp"
+
+
+#define MAX_ADDR_BIT
+
+uint64_t m_LoadBias;
+
+
+struct Record {
+    uint8_t type; // 2 bits
+    uint64_t addr; // 48 bytes
+    uint64_t pc; // 48 bytes
+};
+
+
+
+class RecordWriter {
+public:
+    RecordWriter(const std::string& file);
+    ~RecordWriter();
+
+    void WriteOut(const Record& record);
+private:
+
+    std::ofstream m_File;
+};
+
 
 class CSVWriter
 {
@@ -25,9 +52,9 @@ private:
 
 CSVWriter::CSVWriter(const std::string& file,
                      const std::vector<std::string>& labels)
-    : m_File(file, std::ios::app)
+    : m_File(file, std::ios::trunc)
 {
-    //printf("here\n");
+    printf("CSVWRITER()\n");
     if (!m_File.is_open())
     {
         throw std::runtime_error("Failed to open CSV file");
@@ -46,6 +73,7 @@ CSVWriter::CSVWriter(const std::string& file,
 
 CSVWriter::~CSVWriter()
 {
+    m_File.close();
 }
 
 void CSVWriter::WriteOut(const std::string &str)
@@ -54,33 +82,58 @@ void CSVWriter::WriteOut(const std::string &str)
 }
 
 
+RecordWriter::RecordWriter(const std::string &file) : m_File(file, std::ios::trunc)
+{
+    if (!m_File.is_open())
+    {
+        throw std::runtime_error("Failed to open CSV file");
+    }
+}
 
-CSVWriter* g_CSV_Writer;
+RecordWriter::~RecordWriter()
+{
+    m_File.close();
+}
+
+void RecordWriter::WriteOut(const Record &record)
+{
+
+}
+
+
+
+CSVWriter* g_CSV_Writer = nullptr;
 
 
 
 inline std::string load_to_csv(void* addr, void* pc) {
-    return "l," + encodeBase64(reinterpret_cast<uint64_t>(addr)) + "," + std::to_string(reinterpret_cast<uint64_t>(pc));
+    return "l," + encodeBase64(reinterpret_cast<uint64_t>(addr)) + "," + encodeBase64(reinterpret_cast<uint64_t>(pc));
 }
 
 inline std::string store_to_csv(void* addr, void* pc) {
-    return "s," + encodeBase64(reinterpret_cast<uint64_t>(addr)) + "," + std::to_string(reinterpret_cast<uint64_t>(pc));
+    return "s," + encodeBase64(reinterpret_cast<uint64_t>(addr)) + "," + encodeBase64(reinterpret_cast<uint64_t>(pc));
 }
 
 inline std::string instfetch_to_csv(void* addr, void* pc) {
-    return "i," + encodeBase64(reinterpret_cast<uint64_t>(addr)) + "," + std::to_string(reinterpret_cast<uint64_t>(pc));
+    return "i," + encodeBase64(reinterpret_cast<uint64_t>(addr)) + "," + encodeBase64(reinterpret_cast<uint64_t>(pc));
 }
 
 
 extern "C"
 void record_load(void* addr, void* pc)
 {
-        g_CSV_Writer->WriteOut(load_to_csv(addr, pc));
+    if (!g_CSV_Writer)
+        return;
+    pc = (void*)((uint64_t)__builtin_return_address(0) - m_LoadBias);
+    g_CSV_Writer->WriteOut(load_to_csv(addr, pc));
 }
 
 extern "C"
 void record_store(void* addr, void* pc)
 {
+    if (!g_CSV_Writer)
+        return;
+    pc = (void*)((uint64_t)__builtin_return_address(0) - m_LoadBias);
     g_CSV_Writer->WriteOut(store_to_csv(addr, pc));
 }
 
@@ -110,17 +163,23 @@ bool new_instfetch_block(void* pc) {
 extern "C"
 void bb_entry_callback(uint64_t bb_id)
 {
-    void* pc = __builtin_return_address(0);
+    if (!g_CSV_Writer)
+        return;
+    void* pc = (void*)((uint64_t)__builtin_return_address(0) - m_LoadBias);
+   // printf("0x%x\n", pc);
     if (new_instfetch_block(pc))
         g_CSV_Writer->WriteOut(instfetch_to_csv(0x00, pc));
 
 }
 
+
+
 __attribute__((constructor))
 extern "C"
 void runtime_init()
 {
-    printf("CSV INIT\n");
-    g_CSV_Writer = new CSVWriter("./output_artifacts/MemoryAnalysis.csv", {"event", "addr", "pc"});
+    m_LoadBias = compute_load_bias("./test/a.out");
+    printf("CSV INIT swag\n");
+    g_CSV_Writer = new CSVWriter("./output_artifacts/InstructionAnalysis.csv", {"event", "addr", "pc"});
+    printf(" csv  %p\n\n", g_CSV_Writer);
 }
-

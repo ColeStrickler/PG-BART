@@ -76,16 +76,32 @@ std::vector<std::string> CSVLineReader::split_csv_line(const std::string& line) 
 
 
 
-OfflineAnalyzer::OfflineAnalyzer() : m_L2Reads(0), m_L2Writes(0), m_DRAMReads(0), m_DRAMWrites(0)
+OfflineAnalyzer::OfflineAnalyzer(const std::string &file) : m_L2Reads(0), m_L2Writes(0), m_DRAMReads(0), m_DRAMWrites(0)
 {
     m_Config = OpenJSONFile("./MemorySimulationConfig.json");
     l1d = new Cache(GetCacheConfig("l1d"));
     l1i = new Cache(GetCacheConfig("l1i"));
     l2 = new Cache(GetCacheConfig("l2"));
-    m_CSVReader = new CSVLineReader("./output_artifacts/MemoryAnalysis.csv");
-    
+    //m_CSVReader = new CSVLineReader("./output_artifacts/MemoryAnalysis.csv");
+    m_CSVReader = new CSVLineReader(file);
+
+
+
+    m_ElfBinaryFunctionInfo = loadFunctions("./test/a.out");
+    std::sort(
+        m_ElfBinaryFunctionInfo.begin(),
+        m_ElfBinaryFunctionInfo.end(),
+        [](const FunctionInfo& a, const FunctionInfo& b)
+        {
+            return a.start < b.start;
+        }
+    );
+
+
 
 }
+
+
 
 OfflineAnalyzer::~OfflineAnalyzer()
 {
@@ -170,8 +186,13 @@ void OfflineAnalyzer::DispatchRead()
         Read from l1d
     */
     uint64_t load_addr = decodeBase64(m_CSVReader->get("addr"));
+
+
+
     ReadAccess load_acc = {.m_Addr=load_addr, .m_LoadSize=8};
     auto l1d_res = L1D_LOAD(load_acc);
+    uint64_t pc_addr = decodeBase64(m_CSVReader->get("pc"));
+    auto func = findFunction(m_ElfBinaryFunctionInfo, pc_addr);
     if (l1d_res.m_Result == ACCESS_RESULT::HIT) // If we hit, there is no evictions
     {
 
@@ -221,6 +242,9 @@ void OfflineAnalyzer::DispatchRead()
 
     InvalidateIfNecessary(evicted_l2.m_Addr);
     // Since we missed in the L2, the original read now must go to DRAM
+
+    if (func)
+        m_FuncDRAMInfo[func->name]++;
     DRAM_LOAD();
 
 #undef L1D_LOAD
@@ -245,6 +269,10 @@ void OfflineAnalyzer::DispatchWrite()
         Read from l1d
     */
     uint64_t load_addr = decodeBase64(m_CSVReader->get("addr"));
+    uint64_t pc_addr = decodeBase64(m_CSVReader->get("pc"));
+    auto func = findFunction(m_ElfBinaryFunctionInfo, pc_addr);
+
+
     WriteAccess load_acc = {.m_Addr=load_addr, .m_StoreSize=8};
     auto l1d_res = L1D_WRITE(load_acc);
     if (l1d_res.m_Result == ACCESS_RESULT::HIT) // If we hit, there is no evictions
@@ -292,6 +320,8 @@ void OfflineAnalyzer::DispatchWrite()
 
     // Since we missed in the L2, the original read now must go to DRAM
     DRAM_LOAD();
+    if (func)
+        m_FuncDRAMInfo[func->name]++;
 
 #undef L1D_WRITE
 #undef L2_LOAD
@@ -312,15 +342,19 @@ void OfflineAnalyzer::DispatchInstructionFetch()
 #define EVICTED_2_WB(evicted) WriteAccess{.m_Addr=evicted.m_Addr, .m_StoreSize=64}
     
     /*
-        Read from l1d
+        Read from l1i
     */
     uint64_t load_addr = decodeBase64(m_CSVReader->get("pc")); // we use PC as the fetch addr
-        
+    auto func = findFunction(m_ElfBinaryFunctionInfo, load_addr);
+
+
     ReadAccess load_acc = {.m_Addr=load_addr, .m_LoadSize=8};
     auto l1d_res = L1I_LOAD(load_acc);
     
     if (l1d_res.m_Result == ACCESS_RESULT::HIT) // If we hit, there is no evictions
+    {
         return;
+    }
     auto& evicted = l1d_res.m_Evicted.m_Evicted;
     
     assert(!evicted.m_Dirty);
@@ -349,12 +383,14 @@ void OfflineAnalyzer::DispatchInstructionFetch()
     auto l2_load_res = L2_LOAD(l2_load_acc);
     
     if (l2_load_res.m_Result == ACCESS_RESULT::HIT)
+    {
+
         return;
+    }
 
     /*
         Now handle misses/evictions at the l2 from the original load
     */
-
 
     auto& evicted_l2 = l2_load_res.m_Evicted.m_Evicted;
     if (evicted_l2.m_Dirty && evicted_l2.m_Valid)
@@ -363,6 +399,8 @@ void OfflineAnalyzer::DispatchInstructionFetch()
 
     // Since we missed in the L2, the original read now must go to DRAM
     DRAM_LOAD();
+    if (func)
+        m_FuncDRAMInfo[func->name]++;
 
 #undef L1D_LOAD
 #undef L1D_WRITE
@@ -379,21 +417,30 @@ void OfflineAnalyzer::InvalidateIfNecessary(uint64_t addr)
     l1i->InvalidateIfNecessary(addr);
 }
 
-int main()
+int main(int argc, char** argv)
 {
-    OfflineAnalyzer analysis;
+    auto start = std::chrono::steady_clock::now();
 
+    OfflineAnalyzer analysis(argv[1]);
 
-
-    while(analysis.ConsumeEvent())
+    while (analysis.ConsumeEvent())
     {
-
     }
 
+    auto end = std::chrono::steady_clock::now();
+
+    std::chrono::duration<double> elapsed = end - start;
 
     std::cout << analysis.PrintStats() << std::endl;
+    std::cout << "Elapsed time: " 
+              << elapsed.count() 
+              << " seconds" << std::endl;
 
+    printf("%d\n", analysis.m_FuncDRAMInfo.size());
+    for (auto& f: analysis.m_FuncDRAMInfo)
+    {
+        std::cout << f.first << ": " << f.second << "\n";
+    }
 
-
-    
+    return 0;
 }

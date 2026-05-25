@@ -5,7 +5,7 @@
 
 CXX = g++
 CXXFLAGS = -std=c++17 -O3 -Wall -Wextra -g
-LDFLAGS = 
+LDFLAGS = -lelf
 
 # Directories
 SRC_DIR = src
@@ -15,7 +15,8 @@ TARGET = offline_analyzer
 # Source files for offline_analyzer
 SRCS = $(SRC_DIR)/offline_analzyer.cpp \
        $(SRC_DIR)/cache.cpp \
-	   $(SRC_DIR)/base64.cpp
+	   $(SRC_DIR)/base64.cpp \
+	   $(SRC_DIR)/elf_info.cpp
 
 # Object files
 OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SRCS))
@@ -38,7 +39,14 @@ $(TARGET): $(OBJS)
 
 # Run the analyzer
 run: $(TARGET)
-	./$(TARGET)
+	./$(TARGET) output_artifacts/InstructionAnalysis.csv
+
+
+inst: $(TARGET)
+	./$(TARGET) output_artifacts/InstructionAnalysis.csv
+
+mem: $(TARGET)
+	./$(TARGET) output_artifacts/MemoryAnalysis.csv
 
 # Clean build artifacts
 clean:

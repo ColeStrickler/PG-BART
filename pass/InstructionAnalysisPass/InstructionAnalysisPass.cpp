@@ -25,8 +25,9 @@ struct InstructionAnalysisPass : PassInfoMixin<InstructionAnalysisPass> {
 
         for (Function &F : M) {
             std::string func_name = F.getName().str();
-            //if (func_name == "main")
-            //    InstallRuntimeInit(M, F);
+
+            if (func_name == "bb_entry_callback")
+                continue;
 
 
             if (F.isDeclaration())

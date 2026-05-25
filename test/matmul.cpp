@@ -50,21 +50,21 @@ void matmul_tiled(const Matrix& A, const Matrix& B, Matrix& C, int n, int tile_s
 
 int main() {
     const int N = 256;           // Matrix size (N x N)
-    const int TILE_SIZE = 4;     // <<< Change this to test different blocking factors
+    const int TILE_SIZE = 32;     // <<< Change this to test different blocking factors
 
     std::cout << "Matrix size: " << N << " x " << N << "\n";
     std::cout << "Tile size: " << TILE_SIZE << "\n\n";
 
-    Matrix A(N, std::vector<double>(N, 0.0));
-    Matrix B(N, std::vector<double>(N, 0.0));
-    Matrix C(N, std::vector<double>(N, 0.0));
+    Matrix A(N, std::vector<double>(N));
+    Matrix B(N, std::vector<double>(N));
+    Matrix C(N, std::vector<double>(N));
 
-    init_matrix(A, N);
-    init_matrix(B, N);
+    //init_matrix(A, N);
+    //init_matrix(B, N);
 
     auto start = std::chrono::high_resolution_clock::now();
-
-    matmul_tiled(A, B, C, N, TILE_SIZE);
+    
+     matmul_tiled(A, B, C, N, TILE_SIZE);
     //matmul_naive(A,B,C,N);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);

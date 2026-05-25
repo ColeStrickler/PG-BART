@@ -2,7 +2,7 @@
     "cache_hierarchy" : {
         "l1i" : {
             "line_size": 64,
-            "sets":  32,
+            "sets":  2,
             "ways":  4,
             "banks": 1,
             "policy": "RANDOM"
