@@ -48,6 +48,17 @@ void matmul_tiled(const Matrix& A, const Matrix& B, Matrix& C, int n, int tile_s
     }
 }
 
+
+
+/*
+We can attribute total # of instructions to a function
+
+and get accesses/inst
+
+
+(accesses/inst) * (inst/cycle) = accesses/cycle
+*/
+
 int main() {
     const int N = 256;           // Matrix size (N x N)
     const int TILE_SIZE = 32;     // <<< Change this to test different blocking factors

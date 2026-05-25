@@ -109,8 +109,7 @@ CacheAccessInfo Cache::Store(WriteAccess store)
     }
     else
     {
-        if (m_SetCount == 64)
-            printf("STORE!\n");
+
         ReplacementResult result =  AllocateLine(store.m_Addr, true);
         access_info.m_Evicted = result;
     }

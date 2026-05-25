@@ -44,7 +44,6 @@ struct MemoryAnalysisPass : PassInfoMixin<MemoryAnalysisPass> {
                 continue;
             if (func_name == "record_store")
                 continue;
-            std::cout << func_name << std::endl;
 
             if (F.isDeclaration())
                 continue;
