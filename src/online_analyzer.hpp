@@ -116,7 +116,7 @@ public:
 
 
 
-    std::string PrintStats() const;
+
     std::unordered_map<std::string, uint64_t> m_FuncDRAMInfo;
     std::unordered_map<std::string, uint64_t> m_FuncL2Info;
 private:
@@ -124,15 +124,8 @@ private:
     void* m_CurrMemAddr;
     const FunctionInfo* m_CurrentFunc;
     // Statistics
-    uint64_t m_DRAMWrites;
-    uint64_t m_DRAMReads;
-    uint64_t m_L2Reads;
-    uint64_t m_L2Writes;
     std::vector<FunctionInfo> m_ElfBinaryFunctionInfo;
     std::stack<FuncContext> m_ContextStack;
-    
-
-
     std::unordered_map<std::string, FuncResults> m_FunctionResults;
 
 

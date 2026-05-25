@@ -10,7 +10,7 @@
 
         "l1d" : {
             "line_size": 64,
-            "sets":  64,
+            "sets":  32,
             "ways":  4,
             "banks": 1,
             "policy": "RANDOM"

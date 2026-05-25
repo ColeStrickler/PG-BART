@@ -26,36 +26,36 @@ struct InstructionAnalysisPass : PassInfoMixin<InstructionAnalysisPass> {
         FunctionCallee FuncEntryFn = CreateFuncEntryFunctionCallbackRef(M);
 
         for (Function &F : M) {
-            std::string func_name = F.getName().str();
+            StringRef Name = F.getName();   // Use StringRef - more efficient
+                // Skip our own callbacks
+                if (Name == "bb_entry_callback" ||
+                    Name == "function_entry_callback" ||
+                    Name == "function_exit_callback")
+                    continue;
 
-            if (func_name == "bb_entry_callback")
-                continue;
-            if (func_name == "function_entry_callback")
-                continue;
-            if (func_name == "function_exit_callback")
-                continue;
+                // ==================== STRONG LIBRARY FILTER ====================
+                if (F.isDeclaration() || F.isIntrinsic())
+                    continue;
 
+                // Skip anything from std:: namespace
+                if (Name.starts_with("_ZSt") ||           // std:: (most common)
+                    Name.starts_with("_ZNSt") ||          // std:: in namespaces
+                    Name.starts_with("_ZNKS") ||
+                    Name.starts_with("std::") ||          // demangled
+                    Name.contains("__cxx11") ||           // std::__cxx11::basic_string
+                    Name.contains("__detail") ||          // std::__detail:: (hashtable internals)
+                    Name.contains("_Hashtable") ||        // _Hashtable stuff
+                    Name.contains("__gnu_cxx"))
+                    continue;
 
+                // Additional common C++ std internals
+                if (Name.contains("basic_string") ||
+                    Name.contains("vector<") ||
+                    Name.contains("allocator<") ||
+                    Name.contains("operator new") ||
+                    Name.contains("operator delete"))
+                    continue;
 
-                // Skip our own instrumentation functions
-            if (func_name == "bb_entry_callback" ||
-                func_name == "function_entry_callback" ||
-                func_name == "function_exit_callback")
-                continue;
-
-            // Skip library / std functions
-            if (F.isDeclaration() || F.isIntrinsic()) {
-                continue;
-            }
-
-            if (func_name.rfind("_ZSt", 0) == 0 ||      // std:: 
-                func_name.rfind("_ZNSt", 0) == 0 || 
-                func_name.rfind("std::", 0) == 0 ||
-                func_name.find("__gnu_cxx") != std::string::npos ||
-                func_name.find("operator new") != std::string::npos ||
-                func_name.find("operator delete") != std::string::npos) {
-                continue;
-            }
 
 
                 IRBuilder<> EntryBuilder(&*F.getEntryBlock().getFirstInsertionPt());

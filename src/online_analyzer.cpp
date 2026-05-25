@@ -21,7 +21,7 @@ REPLACEMENT_POLICY StringToReplacementPolicy(const std::string& str)
 };
 
 
-OnlineAnalyzer::OnlineAnalyzer() : m_L2Reads(0), m_L2Writes(0), m_DRAMReads(0), m_DRAMWrites(0)
+OnlineAnalyzer::OnlineAnalyzer() 
 {
     m_Config = OpenJSONFile("./MemorySimulationConfig.json");
     l1d = new Cache(GetCacheConfig("l1d"));
@@ -50,16 +50,9 @@ OnlineAnalyzer::OnlineAnalyzer() : m_L2Reads(0), m_L2Writes(0), m_DRAMReads(0), 
 
 OnlineAnalyzer::~OnlineAnalyzer()
 {
-    uint64_t sumDRAM = 0, sumL2 = 0;
-for (auto& p : m_FuncDRAMInfo) sumDRAM += p.second;
-for (auto& p : m_FuncL2Info)   sumL2   += p.second;
-
-std::cout << "\n=== SUM CHECK ===\n";
-std::cout << "Sum of all functions DRAM = " << sumDRAM << "  (global DRAM = " << (m_DRAMReads + m_DRAMWrites) << ")\n";
-std::cout << "Sum of all functions L2   = " << sumL2   << "  (global L2   = " << (m_L2Reads + m_L2Writes) << ")\n";
 
 
-    std::cout << PrintStats() << "\n";
+
     for (auto& m: m_FunctionResults)
     {
         std::cout << m.first << ": " << m.second << std::endl;
@@ -105,7 +98,7 @@ void OnlineAnalyzer::PopContext(EVENT type, void *pc)
     if (!fInfo)
         return;
     
-    LogContextResults(GetCurrentContext());
+    LogContextResults(GetCurrentContext()); // maybe want to log absolute inst executed, or some thresholding...
     m_ContextStack.pop();
 }
 
@@ -137,21 +130,6 @@ FuncContext &OnlineAnalyzer::GetCurrentContext()
     return m_ContextStack.top();
 }
 
-std::string OnlineAnalyzer::PrintStats() const
-{
-    std::string stats = "=== Offline Analyzer Statistics ===\n";
-    
-    stats += "L2 Reads     : " + std::to_string(m_L2Reads) + "\n";
-    stats += "L2 Writes    : " + std::to_string(m_L2Writes) + "\n";
-    stats += "DRAM Reads   : " + std::to_string(m_DRAMReads) + "\n";
-    stats += "DRAM Writes  : " + std::to_string(m_DRAMWrites) + "\n";
-    
-    // Optional: Add totals
-    uint64_t total_accesses = m_L2Reads + m_L2Writes + m_DRAMReads + m_DRAMWrites;
-    stats += "Total Accesses : " + std::to_string(total_accesses) + "\n";
-    
-    return stats;
-}
 
 
 CacheConfig OnlineAnalyzer::GetCacheConfig(const std::string &cache) const
@@ -181,8 +159,8 @@ And to make sure we do not evict from L2 if a line is in L1, or to at least hand
 void OnlineAnalyzer::DispatchRead()
 {
 #define L1D_LOAD(read_acc) l1d->Load(read_acc)
-#define L2_LOAD(read_acc) l2->Load(read_acc); m_L2Reads++; GetCurrentContext().m_L2Reads++;
-#define L2_WRITE(store_acc) l2->Store(store_acc); m_L2Writes++; GetCurrentContext().m_L2Writes++;
+#define L2_LOAD(read_acc) l2->Load(read_acc); GetCurrentContext().m_L2Reads++;
+#define L2_WRITE(store_acc) l2->Store(store_acc); GetCurrentContext().m_L2Writes++;
 #define DRAM_LOAD()  GetCurrentContext().m_DRAMReads++;
 #define DRAM_WRITE()  GetCurrentContext().m_DRAMWrites++;
 #define EVICTED_2_WB(evicted) WriteAccess{.m_Addr=evicted.m_Addr, .m_StoreSize=64}
@@ -265,8 +243,8 @@ void OnlineAnalyzer::DispatchRead()
 void OnlineAnalyzer::DispatchWrite()
 {
 #define L1D_WRITE(store_acc) l1d->Store(store_acc)
-#define L2_LOAD(read_acc) l2->Load(read_acc); m_L2Reads++; GetCurrentContext().m_L2Reads++;
-#define L2_WRITE(store_acc) l2->Store(store_acc); m_L2Writes++; GetCurrentContext().m_L2Writes++;
+#define L2_LOAD(read_acc) l2->Load(read_acc); GetCurrentContext().m_L2Reads++;
+#define L2_WRITE(store_acc) l2->Store(store_acc); GetCurrentContext().m_L2Writes++;
 #define DRAM_LOAD()  GetCurrentContext().m_DRAMReads++;
 #define DRAM_WRITE()  GetCurrentContext().m_DRAMWrites++;
 #define EVICTED_2_WB(evicted) WriteAccess{.m_Addr=evicted.m_Addr, .m_StoreSize=64}
@@ -341,8 +319,8 @@ void OnlineAnalyzer::DispatchWrite()
 void OnlineAnalyzer::DispatchInstructionFetch()
 {
 #define L1I_LOAD(read_acc) l1i->Load(read_acc)
-#define L2_LOAD(read_acc) l2->Load(read_acc); m_L2Reads++; GetCurrentContext().m_L2Reads++;
-#define L2_WRITE(store_acc) l2->Store(store_acc); m_L2Writes++; GetCurrentContext().m_L2Writes++;
+#define L2_LOAD(read_acc) l2->Load(read_acc); GetCurrentContext().m_L2Reads++;
+#define L2_WRITE(store_acc) l2->Store(store_acc); GetCurrentContext().m_L2Writes++;
 #define DRAM_LOAD()  GetCurrentContext().m_DRAMReads++;
 #define DRAM_WRITE()  GetCurrentContext().m_DRAMWrites++;
 #define EVICTED_2_WB(evicted) WriteAccess{.m_Addr=evicted.m_Addr, .m_StoreSize=64}
