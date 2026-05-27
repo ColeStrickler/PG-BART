@@ -46,16 +46,61 @@ OnlineAnalyzer::OnlineAnalyzer()
 
 }
 
+static std::string cleanFunctionName(std::string name) {
+    // Remove everything after the first '('  → removes parameters
+    size_t paren = name.find('(');
+    if (paren != std::string::npos) {
+        name = name.substr(0, paren);
+    }
 
+    // Optional: Remove template arguments <...>
+    size_t lt = name.find('<');
+    while (lt != std::string::npos) {
+        size_t gt = name.find('>', lt);
+        if (gt != std::string::npos) {
+            name = name.substr(0, lt) + name.substr(gt + 1);
+            lt = name.find('<', lt);
+        } else {
+            break;
+        }
+    }
+
+    // Clean trailing reference/pointer symbols that sometimes remain
+    while (!name.empty() && (name.back() == '&' || name.back() == '*')) {
+        name.pop_back();
+    }
+
+    // Trim any whitespace
+    name.erase(0, name.find_first_not_of(" \t"));
+    name.erase(name.find_last_not_of(" \t") + 1);
+
+    return name;
+}
+
+
+#define DRAM_CYCLE_LATENCY 100
+#define L2_CYCLE_LATENCY 40
 
 OnlineAnalyzer::~OnlineAnalyzer()
 {
 
-
+    auto ipc_file = OpenJSONFile("./output_artifacts/mca_report.json");
 
     for (auto& m: m_FunctionResults)
     {
-        std::cout << m.first << ": " << m.second << std::endl;
+
+        double ipc_file_val  = ipc_file[cleanFunctionName(m.first)]["ipc"];
+
+        double ipc = ( (1.0f/m.second.m_DRAMReadPerInst) * (1/DRAM_CYCLE_LATENCY));
+        ipc += ((1.0f/m.second.m_DRAMWritePerInst)*(0));
+        ipc += ((1.0f/m.second.m_L2ReadPerInst)*(1/L2_CYCLE_LATENCY));
+        ipc += ((1.0f/m.second.m_DRAMWritePerInst)*(0));
+        ipc += ((ipc_file_val)*(1.0f - m.second.m_DRAMReadPerInst - m.second.m_DRAMWritePerInst - m.second.m_L2ReadPerInst - m.second.m_DRAMWritePerInst));
+        /*
+            We update ipc to reflect a weighted model
+        */
+        std::cout << m.first << ": " << m.second.Print(ipc, 1.0) << std::endl;
+    
     }
 
 }

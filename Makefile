@@ -53,6 +53,16 @@ clean:
 	rm $(BUILD_DIR)/* $(TARGET)
 	@echo "Cleaned build artifacts"
 
+
+mca:
+	clang++ -shared -fPIC -fno-rtti -fno-exceptions \
+		-I/home/cole/Documents/llvm-project/clang/include \
+		-I/home/cole/Documents/llvm-project/build/include \
+		-I/home/cole/Documents/llvm-project/build/tools/clang/include \
+		-I/home/cole/Documents/llvm-project/llvm/include \
+		plugin/MCAInserter.cpp \
+		-o MCAInserter.so
+
 # Rebuild from scratch
 rebuild: clean all
 

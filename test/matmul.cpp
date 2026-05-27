@@ -8,6 +8,8 @@ using Matrix = std::vector<std::vector<double>>;
 
 // Generate random matrix
 void init_matrix(Matrix& A, int n) {
+
+
     std::mt19937 rng(42);
     std::uniform_real_distribution<double> dist(0.0, 1.0);
     
@@ -16,10 +18,14 @@ void init_matrix(Matrix& A, int n) {
             A[i][j] = dist(rng);
         }
     }
+
+
 }
 
 // Naive matrix multiplication (for reference)
 void matmul_naive(const Matrix& A, const Matrix& B, Matrix& C, int n) {
+
+
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j) {
             for (int k = 0; k < n; ++k) {
@@ -27,10 +33,13 @@ void matmul_naive(const Matrix& A, const Matrix& B, Matrix& C, int n) {
             }
         }
     }
+
+
 }
 
 // Tiled (Blocked) Matrix Multiplication
 void matmul_tiled(const Matrix& A, const Matrix& B, Matrix& C, int n, int tile_size) {
+
     for (int i = 0; i < n; i += tile_size) {
         for (int j = 0; j < n; j += tile_size) {
             for (int k = 0; k < n; k += tile_size) {
@@ -46,6 +55,8 @@ void matmul_tiled(const Matrix& A, const Matrix& B, Matrix& C, int n, int tile_s
             }
         }
     }
+
+
 }
 
 
@@ -60,7 +71,9 @@ and get accesses/inst
 */
 
 int main() {
-    const int N = 256;           // Matrix size (N x N)
+
+
+    const int N = 512;           // Matrix size (N x N)
     const int TILE_SIZE = 32;     // <<< Change this to test different blocking factors
 
     std::cout << "Matrix size: " << N << " x " << N << "\n";
@@ -86,4 +99,5 @@ int main() {
     std::cout << "C[0][0] = " << C[0][0] << "\n";
 
     return 0;
+
 }

@@ -76,6 +76,49 @@ struct FuncResults
         os << "}";
         return os;
     }
+
+
+    std::string Print(float ipc, float cpu_frequency_ghz)
+    {
+        std::ostringstream os;
+        os << std::fixed << std::setprecision(4);
+
+        os << "FuncResults {\n";
+        
+        // Multiply each "Per Inst" metric by IPC
+        os << "  DRAM Read / Inst   : " << (m_DRAMReadPerInst)   << "\n";
+        os << "  DRAM Write / Inst  : " << (m_DRAMWritePerInst)  << "\n";
+        os << "  L2 Read / Inst     : " << (m_L2ReadPerInst)     << "\n";
+        os << "  L2 Write / Inst    : " << (m_L2WritesPerInst)   << "\n";
+        // DRAM Read
+        int bytes_per_access = 64;
+        double dram_read_per_cycle = m_DRAMReadPerInst * ipc;
+        double dram_read_bw = dram_read_per_cycle * bytes_per_access * cpu_frequency_ghz * 1000.0;
+        os << "  DRAM Read / cycle   : " << dram_read_per_cycle << "\n";
+        os << "  DRAM Read Bandwidth : " << dram_read_bw << " MB/s\n";
+
+        // DRAM Write
+        double dram_write_per_cycle = m_DRAMWritePerInst * ipc;
+        double dram_write_bw = dram_write_per_cycle * bytes_per_access * cpu_frequency_ghz * 1000.0;
+        os << "  DRAM Write / cycle  : " << dram_write_per_cycle << "\n";
+        os << "  DRAM Write Bandwidth: " << dram_write_bw << " MB/s\n";
+
+        // L2 Read
+        double l2_read_per_cycle = m_L2ReadPerInst * ipc;
+        double l2_read_bw = l2_read_per_cycle * bytes_per_access * cpu_frequency_ghz * 1000.0;
+        os << "  L2 Read / cycle     : " << l2_read_per_cycle << "\n";
+        os << "  L2 Read Bandwidth   : " << l2_read_bw << " MB/s\n";
+
+        // L2 Write
+        double l2_write_per_cycle = m_L2WritesPerInst * ipc;
+        double l2_write_bw = l2_write_per_cycle * bytes_per_access * cpu_frequency_ghz * 1000.0;
+        os << "  L2 Write / cycle    : " << l2_write_per_cycle << "\n";
+        os << "  L2 Write Bandwidth  : " << l2_write_bw << " MB/s\n";
+        os << "  (IPC = " << ipc << ")\n";
+        os << "}";
+
+        return os.str();
+    }
 };
 
 

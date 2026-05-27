@@ -1,0 +1,31 @@
+matmul_naive: FuncResults {
+  DRAM Read / Inst   : 0.1580
+  DRAM Write / Inst  : 0.0003
+  L2 Read / Inst     : 0.1613
+  L2 Write / Inst    : 0.0004
+  DRAM Read / cycle   : 0.2128
+  DRAM Read Bandwidth : 13618.0029 MB/s
+  DRAM Write / cycle  : 0.0004
+  DRAM Write Bandwidth: 22.8023 MB/s
+  L2 Read / cycle     : 0.2172
+  L2 Read Bandwidth   : 13900.0816 MB/s
+  L2 Write / cycle    : 0.0005
+  L2 Write Bandwidth  : 31.1517 MB/s
+  (IPC = 1.3469)
+  
+  
+  matmul_tiled: FuncResults {
+  DRAM Read / Inst   : 0.0017
+  DRAM Write / Inst  : 0.0001
+  L2 Read / Inst     : 0.0077
+  L2 Write / Inst    : 0.0002
+  DRAM Read / cycle   : 0.0032
+  DRAM Read Bandwidth : 202.5753 MB/s
+  DRAM Write / cycle  : 0.0001
+  DRAM Write Bandwidth: 9.2183 MB/s
+  L2 Read / cycle     : 0.0143
+  L2 Read Bandwidth   : 917.7532 MB/s
+  L2 Write / cycle    : 0.0004
+  L2 Write Bandwidth  : 23.3522 MB/s
+  (IPC = 1.8520)
+}

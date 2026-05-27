@@ -11,15 +11,15 @@
         "l1d" : {
             "line_size": 64,
             "sets":  32,
-            "ways":  4,
+            "ways":  8,
             "banks": 1,
             "policy": "RANDOM"
         },
 
         "l2" : {
             "line_size": 64,
-            "sets":  128,
-            "ways":  1,
+            "sets":  1024,
+            "ways":  8,
             "banks": 1,
             "policy": "RANDOM"
         }
