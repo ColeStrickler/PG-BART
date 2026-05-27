@@ -46,7 +46,7 @@ OnlineAnalyzer::OnlineAnalyzer()
 
 }
 
-static std::string cleanFunctionName(std::string name) {
+std::string cleanFunctionName(std::string name) {
     // Remove everything after the first '('  → removes parameters
     size_t paren = name.find('(');
     if (paren != std::string::npos) {
@@ -78,7 +78,7 @@ static std::string cleanFunctionName(std::string name) {
 }
 
 
-#define DRAM_CYCLE_LATENCY 100
+#define DRAM_CYCLE_LATENCY 120
 #define L2_CYCLE_LATENCY 40
 
 OnlineAnalyzer::~OnlineAnalyzer()
@@ -99,7 +99,7 @@ OnlineAnalyzer::~OnlineAnalyzer()
         /*
             We update ipc to reflect a weighted model
         */
-        std::cout << m.first << ": " << m.second.Print(ipc, 1.0) << std::endl;
+        std::cout << cleanFunctionName(m.first) << ": " << m.second.Print(ipc, 1.0) << std::endl;
     
     }
 
