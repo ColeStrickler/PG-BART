@@ -80,6 +80,8 @@ std::string cleanFunctionName(std::string name) {
 
 #define DRAM_CYCLE_LATENCY 120
 #define L2_CYCLE_LATENCY 40
+#define MLP_CACHE 8
+#define MLP_DRAM 8
 
 OnlineAnalyzer::~OnlineAnalyzer()
 {
@@ -91,10 +93,10 @@ OnlineAnalyzer::~OnlineAnalyzer()
 
         double ipc_file_val  = ipc_file[cleanFunctionName(m.first)]["ipc"];
 
-        double ipc = ( (1.0f/m.second.m_DRAMReadPerInst) * (1/DRAM_CYCLE_LATENCY));
+        double ipc = ( (1.0f/m.second.m_DRAMReadPerInst) * (1*MLP_DRAM/DRAM_CYCLE_LATENCY));
         ipc += ((1.0f/m.second.m_DRAMWritePerInst)*(0));
-        ipc += ((1.0f/m.second.m_L2ReadPerInst)*(1/L2_CYCLE_LATENCY));
-        ipc += ((1.0f/m.second.m_DRAMWritePerInst)*(0));
+        ipc += ((1.0f/m.second.m_L2ReadPerInst)*(1*MLP_CACHE/L2_CYCLE_LATENCY));
+        ipc += ((1.0f/m.second.m_L2WritesPerInst)*(0));
         ipc += ((ipc_file_val)*(1.0f - m.second.m_DRAMReadPerInst - m.second.m_DRAMWritePerInst - m.second.m_L2ReadPerInst - m.second.m_DRAMWritePerInst));
         /*
             We update ipc to reflect a weighted model

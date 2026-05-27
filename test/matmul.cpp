@@ -59,6 +59,73 @@ void matmul_tiled(const Matrix& A, const Matrix& B, Matrix& C, int n, int tile_s
 
 }
 
+// ====================== MATRIX TRANSPOSE ======================
+void transpose_naive(const std::vector<std::vector<double>>& A,
+                     std::vector<std::vector<double>>& B,
+                     int N)
+{
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < N; ++j) {
+            B[j][i] = A[i][j];        // Bad access pattern on A
+        }
+    }
+}
+
+void transpose_tiled(const std::vector<std::vector<double>>& A,
+                     std::vector<std::vector<double>>& B,
+                     int N, int tile_size = 32)
+{
+    for (int i = 0; i < N; i += tile_size) {
+        for (int j = 0; j < N; j += tile_size) {
+            for (int ii = i; ii < std::min(i + tile_size, N); ++ii) {
+                for (int jj = j; jj < std::min(j + tile_size, N); ++jj) {
+                    B[jj][ii] = A[ii][jj];
+                }
+            }
+        }
+    }
+}
+
+void matmul_transposed_naive(const std::vector<std::vector<double>>& A,
+                             const std::vector<std::vector<double>>& B,
+                             std::vector<std::vector<double>>& C,
+                             int N)
+{
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < N; ++j) {
+            double sum = 0.0;
+            for (int k = 0; k < N; ++k) {
+                sum += A[i][k] * B[j][k];   // B is accessed transposed
+            }
+            C[i][j] = sum;
+        }
+    }
+}
+
+// Tiled + Transposed (usually best cache behavior)
+void matmul_transposed_tiled(const std::vector<std::vector<double>>& A,
+                             const std::vector<std::vector<double>>& B,
+                             std::vector<std::vector<double>>& C,
+                             int N, int tile_size = 32)
+{
+    for (int i = 0; i < N; i += tile_size) {
+        for (int j = 0; j < N; j += tile_size) {
+            for (int k = 0; k < N; k += tile_size) {
+
+                for (int ii = i; ii < std::min(i + tile_size, N); ++ii) {
+                    for (int jj = j; jj < std::min(j + tile_size, N); ++jj) {
+                        double sum = C[ii][jj];
+                        for (int kk = k; kk < std::min(k + tile_size, N); ++kk) {
+                            sum += A[ii][kk] * B[jj][kk];   // Good spatial locality on both
+                        }
+                        C[ii][jj] = sum;
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 
 /*
@@ -81,6 +148,7 @@ int main() {
 
     Matrix A(N, std::vector<double>(N));
     Matrix B(N, std::vector<double>(N));
+    Matrix Bt(N, std::vector<double>(N));
     Matrix C(N, std::vector<double>(N));
 
     //init_matrix(A, N);
@@ -90,6 +158,11 @@ int main() {
     
     matmul_tiled(A, B, C, N, TILE_SIZE);
     matmul_naive(A,B,C,N);
+    transpose_naive(B, Bt, N);
+    matmul_transposed_naive(A, Bt, C, N);
+    matmul_transposed_tiled(A, Bt, C, N, TILE_SIZE);
+
+
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 

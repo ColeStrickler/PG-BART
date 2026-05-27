@@ -41,6 +41,7 @@ llvm-mca -mcpu=native \
          --dispatch-stats \
          "test/$BASE.s" > output_artifacts/mca_report.txt
 
+./scripts/parse_mca_report.py output_artifacts/mca_report.txt
 #echo "=== Running binary ==="
 #clang++ "test/$INSTR_BC" -O3 -g -o "test/${BASE}.out"
 #./test/${BASE}.out
