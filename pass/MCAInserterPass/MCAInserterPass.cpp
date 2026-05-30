@@ -42,40 +42,42 @@ std::string getCleanName(const llvm::Function &F) {
 
     return Demangled;
 }
+
+
 struct MCAInserterPass : public PassInfoMixin<MCAInserterPass> {
 
 
     bool shouldAddMCA(Function &F) {
-    if (F.isDeclaration()) return false;
+        if (F.isDeclaration()) return false;
 
-    Module *M = F.getParent();
-    GlobalVariable *GV = M->getGlobalVariable("llvm.global.annotations");
-    if (!GV || !GV->hasInitializer()) return false;
+        Module *M = F.getParent();
+        GlobalVariable *GV = M->getGlobalVariable("llvm.global.annotations");
+        if (!GV || !GV->hasInitializer()) return false;
 
-    auto *CA = dyn_cast<ConstantArray>(GV->getInitializer());
-    if (!CA) return false;
+        auto *CA = dyn_cast<ConstantArray>(GV->getInitializer());
+        if (!CA) return false;
 
-    for (const Use &U : CA->operands()) {
-        auto *CS = dyn_cast<ConstantStruct>(U.get());
-        if (!CS || CS->getNumOperands() < 2) continue;
+        for (const Use &U : CA->operands()) {
+            auto *CS = dyn_cast<ConstantStruct>(U.get());
+            if (!CS || CS->getNumOperands() < 2) continue;
 
-        // Check if annotation belongs to this function
-        if (auto *CE = dyn_cast<ConstantExpr>(CS->getOperand(0))) {
-            if (CE->getOperand(0) == &F) {
-                if (auto *StrCE = dyn_cast<ConstantExpr>(CS->getOperand(1))) {
-                    if (auto *Str = dyn_cast<ConstantDataArray>(StrCE->getOperand(0))) {
-                        StringRef Anno = Str->getAsCString();
-                        if (Anno.contains("llvm-mca")) {
-                            errs() << "[MCA PASS] FOUND tag on " << F.getName() << "\n";
-                            return true;
+            // Check if annotation belongs to this function
+            if (auto *CE = dyn_cast<ConstantExpr>(CS->getOperand(0))) {
+                if (CE->getOperand(0) == &F) {
+                    if (auto *StrCE = dyn_cast<ConstantExpr>(CS->getOperand(1))) {
+                        if (auto *Str = dyn_cast<ConstantDataArray>(StrCE->getOperand(0))) {
+                            StringRef Anno = Str->getAsCString();
+                            if (Anno.contains("llvm-mca")) {
+                                errs() << "[MCA PASS] FOUND tag on " << F.getName() << "\n";
+                                return true;
+                            }
                         }
                     }
                 }
             }
         }
+        return false;
     }
-    return false;
-}
 
     PreservedAnalyses run(Module &M,
                           ModuleAnalysisManager &) {

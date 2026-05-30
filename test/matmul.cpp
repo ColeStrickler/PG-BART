@@ -4,6 +4,76 @@
 #include <random>
 #include <iomanip>
 
+
+#include <unistd.h>
+#include <sys/syscall.h>
+#include <linux/perf_event.h>
+#include <cstdint>
+#include <cstdio>
+#include <sys/ioctl.h>     // ← ADD THIS for ioctl()
+#include <stdint.h>
+#include <x86intrin.h>   // for __rdtsc() and __rdtscp()
+
+// ============== CYCLES ==============
+static inline uint64_t read_cycle(void)
+{
+    uint64_t cycles;
+#if defined(__x86_64__)
+    // Best practice: serialize with lfence
+    __asm__ __volatile__("lfence" ::: "memory");
+    cycles = __rdtsc();
+    __asm__ __volatile__("lfence" ::: "memory");
+#else
+#error "Unsupported architecture"
+#endif
+    return cycles;
+}
+
+// ====================== PERF EVENT SETUP ======================
+static int perf_fd = -1;
+
+static void init_perf_instret()
+{
+    struct perf_event_attr pe = {};
+    pe.type = PERF_TYPE_HARDWARE;
+    pe.size = sizeof(struct perf_event_attr);
+    pe.config = PERF_COUNT_HW_INSTRUCTIONS;
+    pe.disabled = 1;
+    pe.exclude_kernel = 0;   // include kernel if you want
+    pe.exclude_hv = 1;
+
+    perf_fd = syscall(__NR_perf_event_open, &pe, 0, -1, -1, 0);
+    if (perf_fd < 0) {
+        perror("perf_event_open failed");
+        printf("Try: sudo sysctl kernel.perf_event_paranoid=-1\n");
+    }
+}
+
+static inline uint64_t read_instret(void)
+{
+    if (perf_fd < 0) return 0;
+
+    uint64_t count = 0;
+    if (read(perf_fd, &count, sizeof(count)) == sizeof(count)) {
+        return count;
+    }
+    return 0;
+}
+
+static inline void start_instret()
+{
+    if (perf_fd >= 0) ioctl(perf_fd, PERF_EVENT_IOC_RESET, 0);
+    if (perf_fd >= 0) ioctl(perf_fd, PERF_EVENT_IOC_ENABLE, 0);
+}
+
+static inline void stop_instret()
+{
+    if (perf_fd >= 0) ioctl(perf_fd, PERF_EVENT_IOC_DISABLE, 0);
+}
+
+
+
+
 using Matrix = std::vector<std::vector<double>>;
 
 // Generate random matrix
@@ -126,8 +196,18 @@ void matmul_transposed_tiled(const std::vector<std::vector<double>>& A,
     }
 }
 
-
-
+#define BENCH(func, ...) \
+    do { \
+        uint64_t s_c = read_cycle(); \
+        start_instret(); \
+        func(__VA_ARGS__); \
+        uint64_t insts = read_instret(); \
+        uint64_t e_c = read_cycle(); \
+        uint64_t cycles = e_c - s_c; \
+        double ipc = (cycles > 0) ? (double)insts / cycles : 0.0; \
+        printf("%-28s : %12lu cycles, %12lu insts, IPC = %.3f\n", \
+               #func, cycles, insts, ipc); \
+    } while(0)
 /*
 We can attribute total # of instructions to a function
 
@@ -139,9 +219,9 @@ and get accesses/inst
 
 int main() {
 
-
-    const int N = 512;           // Matrix size (N x N)
-    const int TILE_SIZE = 32;     // <<< Change this to test different blocking factors
+    init_perf_instret();          // ← Call this once
+    const int N = 256;           // Matrix size (N x N)
+    const int TILE_SIZE = 128;     // <<< Change this to test different blocking factors
 
     std::cout << "Matrix size: " << N << " x " << N << "\n";
     std::cout << "Tile size: " << TILE_SIZE << "\n\n";
@@ -156,11 +236,11 @@ int main() {
 
     auto start = std::chrono::high_resolution_clock::now();
     
-    matmul_tiled(A, B, C, N, TILE_SIZE);
-    matmul_naive(A,B,C,N);
-    transpose_naive(B, Bt, N);
-    matmul_transposed_naive(A, Bt, C, N);
-    matmul_transposed_tiled(A, Bt, C, N, TILE_SIZE);
+    BENCH(matmul_tiled, A, B, C, N, TILE_SIZE);
+    BENCH(matmul_naive, A,B,C,N);
+    BENCH(transpose_naive, B, Bt, N);
+    BENCH(matmul_transposed_naive, A, Bt, C, N);
+    BENCH(matmul_transposed_tiled, A, Bt, C, N, TILE_SIZE);
 
 
     auto end = std::chrono::high_resolution_clock::now();

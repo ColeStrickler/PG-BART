@@ -17,6 +17,20 @@ nlohmann::json OpenJSONFile(const std::string& filename) {
     return data;
 }
 
+void WriteJSONFile(const std::string &filename, nlohmann::json &json)
+{
+    std::ofstream output(filename);
+    if (!output.is_open()) {
+        std::cerr << "WriteJSONFile() Failed to open file\n";
+        return;
+    }
+
+    output << json.dump(4);
+    output.close();
+
+    return;
+}
+
 uint32_t intLog2(uint64_t x) {
     uint32_t log = 0;
 

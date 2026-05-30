@@ -85,23 +85,20 @@ std::string cleanFunctionName(std::string name) {
 
 OnlineAnalyzer::~OnlineAnalyzer()
 {
-
     auto ipc_file = OpenJSONFile("./output_artifacts/mca_report.json");
 
     for (auto& m: m_FunctionResults)
     {
 
-        double ipc_file_val  = ipc_file[cleanFunctionName(m.first)]["ipc"];
+        if (ipc_file.find(cleanFunctionName(m.first)) == ipc_file.end())
+            continue;
+        double ipc = ipc_file[cleanFunctionName(m.first)];
 
-        double ipc = ( (1.0f/m.second.m_DRAMReadPerInst) * (1*MLP_DRAM/DRAM_CYCLE_LATENCY));
-        ipc += ((1.0f/m.second.m_DRAMWritePerInst)*(0));
-        ipc += ((1.0f/m.second.m_L2ReadPerInst)*(1*MLP_CACHE/L2_CYCLE_LATENCY));
-        ipc += ((1.0f/m.second.m_L2WritesPerInst)*(0));
-        ipc += ((ipc_file_val)*(1.0f - m.second.m_DRAMReadPerInst - m.second.m_DRAMWritePerInst - m.second.m_L2ReadPerInst - m.second.m_DRAMWritePerInst));
+
         /*
             We update ipc to reflect a weighted model
         */
-        std::cout << cleanFunctionName(m.first) << ": " << m.second.Print(ipc, 1.0) << std::endl;
+        std::cout << cleanFunctionName(m.first) << ": " << m.second.Print(ipc, 2.2) << std::endl;
     
     }
 
@@ -145,8 +142,11 @@ void OnlineAnalyzer::PopContext(EVENT type, void *pc)
     if (!fInfo)
         return;
     
-    LogContextResults(GetCurrentContext()); // maybe want to log absolute inst executed, or some thresholding...
+    auto ctx = GetCurrentContext();
+    LogContextResults(ctx); // maybe want to log absolute inst executed, or some thresholding...
     m_ContextStack.pop();
+    if (m_ContextStack.size())
+        m_ContextStack.top() += ctx;
 }
 
 void OnlineAnalyzer::LogContextResults(FuncContext &ctx)
@@ -169,7 +169,14 @@ void OnlineAnalyzer::LogContextResults(FuncContext &ctx)
 }
 
 
-FuncContext &OnlineAnalyzer::GetCurrentContext()
+FuncContext OnlineAnalyzer::GetCurrentContext()
+{
+    static FuncContext dummy;
+    if (!m_ContextStack.size())
+        return dummy;
+    return m_ContextStack.top();
+}
+FuncContext& OnlineAnalyzer::GetCurrentContextRef()
 {
     static FuncContext dummy;
     if (!m_ContextStack.size())
@@ -206,10 +213,10 @@ And to make sure we do not evict from L2 if a line is in L1, or to at least hand
 void OnlineAnalyzer::DispatchRead()
 {
 #define L1D_LOAD(read_acc) l1d->Load(read_acc)
-#define L2_LOAD(read_acc) l2->Load(read_acc); GetCurrentContext().m_L2Reads++;
-#define L2_WRITE(store_acc) l2->Store(store_acc); GetCurrentContext().m_L2Writes++;
-#define DRAM_LOAD()  GetCurrentContext().m_DRAMReads++;
-#define DRAM_WRITE()  GetCurrentContext().m_DRAMWrites++;
+#define L2_LOAD(read_acc) l2->Load(read_acc); GetCurrentContextRef().m_L2Reads++;
+#define L2_WRITE(store_acc) l2->Store(store_acc); GetCurrentContextRef().m_L2Writes++;
+#define DRAM_LOAD()  GetCurrentContextRef().m_DRAMReads++;
+#define DRAM_WRITE()  GetCurrentContextRef().m_DRAMWrites++;
 #define EVICTED_2_WB(evicted) WriteAccess{.m_Addr=evicted.m_Addr, .m_StoreSize=64}
 
 
@@ -255,7 +262,8 @@ void OnlineAnalyzer::DispatchRead()
     }
 
     ReadAccess l2_load_acc = {.m_Addr=load_addr, .m_LoadSize=64};
-   
+
+    
     auto l2_load_res = L2_LOAD(l2_load_acc);
 
     if (l2_load_res.m_Result == ACCESS_RESULT::HIT)
@@ -276,6 +284,10 @@ void OnlineAnalyzer::DispatchRead()
 
     DRAM_LOAD();
 
+
+
+
+
 #undef L1D_LOAD
 #undef L2_LOAD
 #undef L2_WRITE
@@ -290,10 +302,10 @@ void OnlineAnalyzer::DispatchRead()
 void OnlineAnalyzer::DispatchWrite()
 {
 #define L1D_WRITE(store_acc) l1d->Store(store_acc)
-#define L2_LOAD(read_acc) l2->Load(read_acc); GetCurrentContext().m_L2Reads++;
-#define L2_WRITE(store_acc) l2->Store(store_acc); GetCurrentContext().m_L2Writes++;
-#define DRAM_LOAD()  GetCurrentContext().m_DRAMReads++;
-#define DRAM_WRITE()  GetCurrentContext().m_DRAMWrites++;
+#define L2_LOAD(read_acc) l2->Load(read_acc); GetCurrentContextRef().m_L2Reads++;
+#define L2_WRITE(store_acc) l2->Store(store_acc); GetCurrentContextRef().m_L2Writes++;
+#define DRAM_LOAD()  GetCurrentContextRef().m_DRAMReads++;
+#define DRAM_WRITE()  GetCurrentContextRef().m_DRAMWrites++;
 #define EVICTED_2_WB(evicted) WriteAccess{.m_Addr=evicted.m_Addr, .m_StoreSize=64}
 
    // printf("write()\n");
@@ -366,10 +378,10 @@ void OnlineAnalyzer::DispatchWrite()
 void OnlineAnalyzer::DispatchInstructionFetch()
 {
 #define L1I_LOAD(read_acc) l1i->Load(read_acc)
-#define L2_LOAD(read_acc) l2->Load(read_acc); GetCurrentContext().m_L2Reads++;
-#define L2_WRITE(store_acc) l2->Store(store_acc); GetCurrentContext().m_L2Writes++;
-#define DRAM_LOAD()  GetCurrentContext().m_DRAMReads++;
-#define DRAM_WRITE()  GetCurrentContext().m_DRAMWrites++;
+#define L2_LOAD(read_acc) l2->Load(read_acc); GetCurrentContextRef().m_L2Reads++;
+#define L2_WRITE(store_acc) l2->Store(store_acc); GetCurrentContextRef().m_L2Writes++;
+#define DRAM_LOAD()  GetCurrentContextRef().m_DRAMReads++;
+#define DRAM_WRITE()  GetCurrentContextRef().m_DRAMWrites++;
 #define EVICTED_2_WB(evicted) WriteAccess{.m_Addr=evicted.m_Addr, .m_StoreSize=64}
 
 
@@ -377,7 +389,7 @@ void OnlineAnalyzer::DispatchInstructionFetch()
         For inst fetch, we store the basic block inst count in the m_CurrADdr
 
     */
-    GetCurrentContext().m_InstructionsExecuted += (uint64_t)m_CurrMemAddr;
+    GetCurrentContextRef().m_InstructionsExecuted += (uint64_t)m_CurrMemAddr;
     
     /*
         Read from l1i
@@ -453,3 +465,116 @@ void OnlineAnalyzer::InvalidateIfNecessary(uint64_t addr)
     l1d->InvalidateIfNecessary(addr);
     l1i->InvalidateIfNecessary(addr);
 }
+
+
+
+
+
+
+
+
+void IPCAnalyzer::init_perf_instret()
+{
+    struct perf_event_attr pe = {};
+    pe.type = PERF_TYPE_HARDWARE;
+    pe.size = sizeof(struct perf_event_attr);
+    pe.config = PERF_COUNT_HW_INSTRUCTIONS;
+    pe.disabled = 1;
+    pe.exclude_kernel = 0;   // include kernel if you want
+    pe.exclude_hv = 1;
+
+    perf_fd = syscall(__NR_perf_event_open, &pe, 0, -1, -1, 0);
+    if (perf_fd < 0) {
+        perror("perf_event_open failed");
+        printf("Try: sudo sysctl kernel.perf_event_paranoid=-1\n");
+    }
+}
+
+
+
+
+
+
+
+void IPCAnalyzer::start_instret()
+{
+    if (perf_fd >= 0) ioctl(perf_fd, PERF_EVENT_IOC_RESET, 0);
+    if (perf_fd >= 0) ioctl(perf_fd, PERF_EVENT_IOC_ENABLE, 0);
+}
+
+ void IPCAnalyzer::stop_instret()
+{
+    if (perf_fd >= 0) ioctl(perf_fd, PERF_EVENT_IOC_DISABLE, 0);
+}
+
+void IPCAnalyzer::init_perf_cycles()
+{
+     struct perf_event_attr pe = {};
+    pe.type = PERF_TYPE_HARDWARE;
+    pe.size = sizeof(struct perf_event_attr);
+    pe.config = PERF_COUNT_HW_CPU_CYCLES;
+    pe.disabled = 1;
+    pe.exclude_kernel = 0;
+    pe.exclude_hv = 1;
+
+    perf_cycles_fd =
+        syscall(__NR_perf_event_open, &pe, 0, -1, -1, 0);
+
+    if (perf_cycles_fd < 0) {
+        perror("perf_event_open cycles failed");
+        printf("Try: sudo sysctl kernel.perf_event_paranoid=-1\n");
+    }
+}
+
+void IPCAnalyzer::start_cycles()
+{
+    if (perf_cycles_fd >= 0)
+        ioctl(perf_cycles_fd, PERF_EVENT_IOC_RESET, 0);
+
+    if (perf_cycles_fd >= 0)
+        ioctl(perf_cycles_fd, PERF_EVENT_IOC_ENABLE, 0);
+}
+
+void IPCAnalyzer::stop_cycles()
+{
+    if (perf_cycles_fd >= 0)
+        ioctl(perf_cycles_fd, PERF_EVENT_IOC_DISABLE, 0);
+}
+
+IPCAnalyzer::IPCAnalyzer()
+{
+    printf("IPC INIT\n");
+#if defined(__x86_64__)
+    init_perf_instret();
+    start_instret();
+    init_perf_cycles();
+    start_cycles();
+#endif
+
+
+    m_ElfBinaryFunctionInfo = loadFunctions("./test/a.out");
+    std::sort(
+        m_ElfBinaryFunctionInfo.begin(),
+        m_ElfBinaryFunctionInfo.end(),
+        [](const FunctionInfo& a, const FunctionInfo& b)
+        {
+            return a.start < b.start;
+        }
+    );
+
+
+}
+
+IPCAnalyzer::~IPCAnalyzer()
+{
+
+    nlohmann::json mca_report;
+    printf("IPC DEINIT\n");
+    for (auto& f: m_IPCTracker)
+    {
+        mca_report[cleanFunctionName(f.first)] = f.second;
+    }
+
+    WriteJSONFile("./output_artifacts/mca_report.json", mca_report);
+}
+

@@ -4,5 +4,5 @@
 src_file="$1"
 
 
-./scripts/mca_insert.sh MCAInserterPass "$src_file"
+./run_ipc.sh IPCAnalysisPass "$src_file" live_runtime.cpp
 ./run_pass.sh InstructionAnalysisPass MemoryAnalysisPass "$src_file" live_runtime.cpp

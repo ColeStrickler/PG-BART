@@ -7,7 +7,20 @@
 #include "base64.hpp"
 #include <chrono>
 #include <stack>
+
+#if defined(__x86_64__)
+#include <x86intrin.h>   // for __rdtsc() and __rdtscp()
+#include <linux/perf_event.h>
+#endif
+#include <unistd.h>
+#include <sys/syscall.h>
+#include <cstdint>
+#include <cstdio>
+#include <sys/ioctl.h>     // ← ADD THIS for ioctl()
+#include <stdint.h>
+
 REPLACEMENT_POLICY StringToReplacementPolicy(const std::string& str);
+
 
 
 
@@ -78,6 +91,7 @@ struct FuncResults
     }
 
 
+
     std::string Print(float ipc, float cpu_frequency_ghz)
     {
         std::ostringstream os;
@@ -124,14 +138,31 @@ struct FuncResults
 
 struct FuncContext
 {
-    uint64_t m_DRAMWrites;
-    uint64_t m_DRAMReads;
-    uint64_t m_L2Reads;
-    uint64_t m_L2Writes;
-    uint64_t m_InstructionsExecuted;
-    std::string m_FuncName;
-};
+    uint64_t m_DRAMWrites = 0;
+    uint64_t m_DRAMReads = 0;
+    uint64_t m_L2Reads = 0;
+    uint64_t m_L2Writes = 0;
+    uint64_t m_InstructionsExecuted = 0;
+    std::string m_FuncName = "";
 
+        // Accumulate another context (useful for combining multiple runs or sub-calls)
+    FuncContext& operator+=(const FuncContext& other)
+    {
+        m_DRAMWrites          += other.m_DRAMWrites;
+        m_DRAMReads           += other.m_DRAMReads;
+        m_L2Reads             += other.m_L2Reads;
+        m_L2Writes            += other.m_L2Writes;
+        m_InstructionsExecuted += other.m_InstructionsExecuted;
+
+        // Optional: only copy name if ours is empty
+        if (m_FuncName.empty() && !other.m_FuncName.empty())
+            m_FuncName = other.m_FuncName;
+
+        return *this;
+    }
+
+    
+};
 
 class OnlineAnalyzer
 {
@@ -153,7 +184,8 @@ public:
     void PushContext(EVENT type, void* pc);
     void PopContext(EVENT type, void* pc);
     void LogContextResults(FuncContext& ctx);
-    FuncContext& GetCurrentContext();
+    FuncContext GetCurrentContext();
+    FuncContext& GetCurrentContextRef();
 
     
 
@@ -189,6 +221,95 @@ private:
 };
 
 
+
+struct IPCTracker
+{
+  uint64_t cycles;
+  uint64_t instructions;
+  std::string function;
+};
+
+class IPCAnalyzer
+{
+public:
+    IPCAnalyzer();
+    ~IPCAnalyzer();
+
+
+    inline void FuncExit() {
+        auto& top = m_IPCStack.top();
+        uint64_t cycles;
+        uint64_t inst;
+        cycles = read_cycle() - top.cycles;
+        inst = read_instret() - top.instructions;
+
+        double ipc = static_cast<double>(inst)/static_cast<double>(cycles);
+
+        m_IPCTracker[top.function] = std::max(ipc, m_IPCTracker[top.function]);
+    }
+
+
+    inline void FuncEnter(uint64_t func) {
+        std::string fname = findFunction(m_ElfBinaryFunctionInfo, func)->name;
+        uint64_t cycles;
+        uint64_t inst;
+        cycles = read_cycle();
+        inst = read_instret();
+        m_IPCStack.push({cycles, inst, fname});
+    }
+
+
+    inline uint64_t read_instret(void)
+    {
+        uint64_t instret = 0;
+    #if defined(__x86_64__)
+        if (read(perf_fd, &instret, sizeof(instret)) == sizeof(instret)) {
+            return instret;
+        }
+        return 0;
+    #elif defined(__riscv)
+        asm volatile ("csrr %0, instret" : "=r"(instret));
+        return instret
+    #endif 
+    }
+
+    inline uint64_t read_cycle(void)
+    {
+        uint64_t cycles;
+    #if defined(__x86_64__)
+        read(perf_cycles_fd, &cycles, sizeof(cycles))== sizeof(cycles);
+    #elif defined(__riscv)
+        asm volatile ("csrr %0, cycles" : "=r"(cycles));
+        return cycles;
+    #else
+    #error "Unsupported architecture"
+    #endif
+        return cycles;
+    }
+
+
+
+
+
+    std::stack<IPCTracker> m_IPCStack;
+    std::unordered_map<std::string, double> m_IPCTracker;
+private:
+    
+#if defined(__x86_64__)
+    int perf_fd;
+    int perf_cycles_fd;
+    void init_perf_instret();
+    void start_instret();
+    void stop_instret();
+
+    void init_perf_cycles();
+    void start_cycles();
+    void stop_cycles();
+#endif
+
+    std::vector<FunctionInfo> m_ElfBinaryFunctionInfo;
+
+};
 
 
 

@@ -16,6 +16,7 @@
 
 uint64_t m_LoadBias;
 OnlineAnalyzer* m_OnlineAnalyzer;
+IPCAnalyzer* m_IPCAnalyzer;
 
 struct Record {
     uint8_t type; // 2 bits
@@ -166,6 +167,18 @@ void function_exit_callback()
 
 
 
+extern "C"
+void ipcfunc_enter()
+{
+    uint64_t pc = ((uint64_t)__builtin_return_address(0) - m_LoadBias);
+    m_IPCAnalyzer->FuncEnter(pc);
+}
+extern "C"
+void ipcfunc_exit()
+{
+    m_IPCAnalyzer->FuncExit();
+}
+
 
 
 __attribute__((constructor))
@@ -174,6 +187,7 @@ void runtime_init()
 {
     m_LoadBias = compute_load_bias("./test/a.out");
     m_OnlineAnalyzer = new OnlineAnalyzer();
+    m_IPCAnalyzer = new IPCAnalyzer();
     printf("RUNTIME INIT swag\n");
 }
 
@@ -184,4 +198,5 @@ extern "C"
 void runtime_destroy()
 {
     delete m_OnlineAnalyzer;
+    delete m_IPCAnalyzer;
 }

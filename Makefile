@@ -48,6 +48,12 @@ inst: $(TARGET)
 mem: $(TARGET)
 	./$(TARGET) output_artifacts/MemoryAnalysis.csv
 
+
+matmul: test/matmul.cpp
+	g++ -O3 test/matmul.cpp -o build/matmul
+	chmod +x build/matmul
+	./build/matmul
+
 # Clean build artifacts
 clean:
 	rm $(BUILD_DIR)/* $(TARGET)

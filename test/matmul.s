@@ -4,7 +4,7 @@
 	.globl	_ZSt21ios_base_library_initv
 
                                         # End of file scope inline assembly
-	.file	0 "/home/cole/Documents/PG-BART" "test/matmul.cpp" md5 0x61f6370f86849465df0c6ae2eb6d992e
+	.file	0 "/home/cole/Documents/PG-BART" "test/matmul.cpp" md5 0xf299ee901b76a0a04ad5a5e32f4995b7
 	.file	1 "/usr/lib/gcc/x86_64-linux-gnu/13/../../../../include/c++/13/bits" "stl_vector.h" md5 0x28825b5d932ba14be6043884e1fd9548
 	.file	2 "/usr/lib/gcc/x86_64-linux-gnu/13/../../../../include/c++/13/bits" "ios_base.h"
 	.file	3 "/usr/lib/gcc/x86_64-linux-gnu/13/../../../../include/c++/13/bits" "new_allocator.h" md5 0x4921ed78c50fb48b72f1f3cf83ff21b4
@@ -2378,7 +2378,7 @@ main:                                   # @main
 	# LLVM-MCA-BEGIN main
 	#NO_APP
 .Ltmp320:
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 	.loc	0 146 15 prologue_end           # test/matmul.cpp:146:15
 	movq	_ZSt4cout@GOTPCREL(%rip), %rbx
@@ -2388,7 +2388,7 @@ main:                                   # @main
 .Ltmp321:
 	.loc	0 146 34                        # test/matmul.cpp:146:34
 	movq	%rax, %rdi
-	movl	$512, %esi                      # imm = 0x200
+	movl	$1024, %esi                     # imm = 0x400
 	callq	_ZNSolsEi@PLT
 .Ltmp322:
 	.loc	0 146 39                        # test/matmul.cpp:146:39
@@ -2398,7 +2398,7 @@ main:                                   # @main
 .Ltmp323:
 	.loc	0 146 48                        # test/matmul.cpp:146:48
 	movq	%rax, %rdi
-	movl	$512, %esi                      # imm = 0x200
+	movl	$1024, %esi                     # imm = 0x400
 	callq	_ZNSolsEi@PLT
 .Ltmp324:
 	.loc	0 146 53                        # test/matmul.cpp:146:53
@@ -2426,12 +2426,12 @@ main:                                   # @main
 	leaq	96(%rsp), %rdi
 	leaq	72(%rsp), %rdx
 	.loc	0 149 17 is_stmt 1              # test/matmul.cpp:149:17
-	movl	$512, %esi                      # imm = 0x200
+	movl	$1024, %esi                     # imm = 0x400
 	callq	_ZNSt6vectorIdSaIdEEC2EmRKS0_
 .Ltmp329:
 .Ltmp279:                               # EH_LABEL
 # %bb.1:                                # %invoke.cont
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 .Ltmp281:                               # EH_LABEL
 	.loc	0 0 17 is_stmt 0                # test/matmul.cpp:0:17
@@ -2439,12 +2439,12 @@ main:                                   # @main
 	leaq	96(%rsp), %rdx
 	leaq	24(%rsp), %rcx
 	.loc	0 149 12 is_stmt 1              # test/matmul.cpp:149:12
-	movl	$512, %esi                      # imm = 0x200
+	movl	$1024, %esi                     # imm = 0x400
 	callq	_ZNSt6vectorIS_IdSaIdEESaIS1_EEC2EmRKS1_RKS2_
 .Ltmp330:
 .Ltmp282:                               # EH_LABEL
 # %bb.2:                                # %invoke.cont11
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 	.loc	0 0 12 is_stmt 0                # test/matmul.cpp:0:12
 	leaq	24(%rsp), %rdi
@@ -2466,12 +2466,12 @@ main:                                   # @main
 	leaq	72(%rsp), %rdi
 	leaq	24(%rsp), %rdx
 	.loc	0 150 17 is_stmt 1              # test/matmul.cpp:150:17
-	movl	$512, %esi                      # imm = 0x200
+	movl	$1024, %esi                     # imm = 0x400
 	callq	_ZNSt6vectorIdSaIdEEC2EmRKS0_
 .Ltmp334:
 .Ltmp285:                               # EH_LABEL
 # %bb.3:                                # %invoke.cont17
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 .Ltmp287:                               # EH_LABEL
 	.loc	0 0 17 is_stmt 0                # test/matmul.cpp:0:17
@@ -2479,12 +2479,12 @@ main:                                   # @main
 	leaq	72(%rsp), %rdx
 	leaq	48(%rsp), %rcx
 	.loc	0 150 12 is_stmt 1              # test/matmul.cpp:150:12
-	movl	$512, %esi                      # imm = 0x200
+	movl	$1024, %esi                     # imm = 0x400
 	callq	_ZNSt6vectorIS_IdSaIdEESaIS1_EEC2EmRKS1_RKS2_
 .Ltmp335:
 .Ltmp288:                               # EH_LABEL
 # %bb.4:                                # %invoke.cont20
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 	.loc	0 0 12 is_stmt 0                # test/matmul.cpp:0:12
 	leaq	48(%rsp), %rdi
@@ -2506,12 +2506,12 @@ main:                                   # @main
 	leaq	24(%rsp), %rdi
 	leaq	48(%rsp), %rdx
 	.loc	0 151 18 is_stmt 1              # test/matmul.cpp:151:18
-	movl	$512, %esi                      # imm = 0x200
+	movl	$1024, %esi                     # imm = 0x400
 	callq	_ZNSt6vectorIdSaIdEEC2EmRKS0_
 .Ltmp339:
 .Ltmp291:                               # EH_LABEL
 # %bb.5:                                # %invoke.cont30
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 .Ltmp293:                               # EH_LABEL
 	.loc	0 0 18 is_stmt 0                # test/matmul.cpp:0:18
@@ -2519,12 +2519,12 @@ main:                                   # @main
 	leaq	24(%rsp), %rdx
 	leaq	8(%rsp), %rcx
 	.loc	0 151 12 is_stmt 1              # test/matmul.cpp:151:12
-	movl	$512, %esi                      # imm = 0x200
+	movl	$1024, %esi                     # imm = 0x400
 	callq	_ZNSt6vectorIS_IdSaIdEESaIS1_EEC2EmRKS1_RKS2_
 .Ltmp340:
 .Ltmp294:                               # EH_LABEL
 # %bb.6:                                # %invoke.cont33
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 	.loc	0 0 12 is_stmt 0                # test/matmul.cpp:0:12
 	leaq	8(%rsp), %rdi
@@ -2546,12 +2546,12 @@ main:                                   # @main
 	leaq	48(%rsp), %rdi
 	leaq	8(%rsp), %rdx
 	.loc	0 152 17 is_stmt 1              # test/matmul.cpp:152:17
-	movl	$512, %esi                      # imm = 0x200
+	movl	$1024, %esi                     # imm = 0x400
 	callq	_ZNSt6vectorIdSaIdEEC2EmRKS0_
 .Ltmp344:
 .Ltmp297:                               # EH_LABEL
 # %bb.7:                                # %invoke.cont43
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 .Ltmp299:                               # EH_LABEL
 	.loc	0 0 17 is_stmt 0                # test/matmul.cpp:0:17
@@ -2559,12 +2559,12 @@ main:                                   # @main
 	leaq	48(%rsp), %rdx
 	leaq	16(%rsp), %rcx
 	.loc	0 152 12 is_stmt 1              # test/matmul.cpp:152:12
-	movl	$512, %esi                      # imm = 0x200
+	movl	$1024, %esi                     # imm = 0x400
 	callq	_ZNSt6vectorIS_IdSaIdEESaIS1_EEC2EmRKS1_RKS2_
 .Ltmp345:
 .Ltmp300:                               # EH_LABEL
 # %bb.8:                                # %invoke.cont46
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 	.loc	0 0 12 is_stmt 0                # test/matmul.cpp:0:12
 	leaq	16(%rsp), %rdi
@@ -2593,7 +2593,7 @@ main:                                   # @main
 	movq	%rbx, %rdi
 	movq	%r15, %rsi
 	movq	%r14, %rdx
-	movl	$512, %ecx                      # imm = 0x200
+	movl	$1024, %ecx                     # imm = 0x400
 	movl	$32, %r8d
 	callq	_Z12matmul_tiledRKSt6vectorIS_IdSaIdEESaIS1_EES5_RS3_ii
 .Ltmp350:
@@ -2601,7 +2601,7 @@ main:                                   # @main
 	movq	%rbx, %rdi
 	movq	%r15, %rsi
 	movq	%r14, %rdx
-	movl	$512, %ecx                      # imm = 0x200
+	movl	$1024, %ecx                     # imm = 0x400
 	callq	_Z12matmul_naiveRKSt6vectorIS_IdSaIdEESaIS1_EES5_RS3_i
 .Ltmp351:
 	.loc	0 0 5 is_stmt 0                 # test/matmul.cpp:0:5
@@ -2609,21 +2609,21 @@ main:                                   # @main
 	.loc	0 161 5 is_stmt 1               # test/matmul.cpp:161:5
 	movq	%r15, %rdi
 	movq	%r12, %rsi
-	movl	$512, %edx                      # imm = 0x200
+	movl	$1024, %edx                     # imm = 0x400
 	callq	_Z15transpose_naiveRKSt6vectorIS_IdSaIdEESaIS1_EERS3_i
 .Ltmp352:
 	.loc	0 162 5                         # test/matmul.cpp:162:5
 	movq	%rbx, %rdi
 	movq	%r12, %rsi
 	movq	%r14, %rdx
-	movl	$512, %ecx                      # imm = 0x200
+	movl	$1024, %ecx                     # imm = 0x400
 	callq	_Z23matmul_transposed_naiveRKSt6vectorIS_IdSaIdEESaIS1_EES5_RS3_i
 .Ltmp353:
 	.loc	0 163 5                         # test/matmul.cpp:163:5
 	movq	%rbx, %rdi
 	movq	%r12, %rsi
 	movq	%r14, %rdx
-	movl	$512, %ecx                      # imm = 0x200
+	movl	$1024, %ecx                     # imm = 0x400
 	movl	$32, %r8d
 	callq	_Z23matmul_transposed_tiledRKSt6vectorIS_IdSaIdEESaIS1_EES5_RS3_ii
 .Ltmp354:
@@ -2640,7 +2640,7 @@ main:                                   # @main
 .Ltmp356:
 .Ltmp303:                               # EH_LABEL
 # %bb.9:                                # %invoke.cont63
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 	.loc	0 167 79                        # test/matmul.cpp:167:79
 	movq	%rax, 120(%rsp)
@@ -2651,7 +2651,7 @@ main:                                   # @main
 .Ltmp357:
 .Ltmp305:                               # EH_LABEL
 # %bb.10:                               # %invoke.cont66
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 	.loc	0 167 21 is_stmt 1              # test/matmul.cpp:167:21
 	movq	%rax, 16(%rsp)
@@ -2663,7 +2663,7 @@ main:                                   # @main
 .Ltmp358:
 .Ltmp308:                               # EH_LABEL
 # %bb.11:                               # %invoke.cont71
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 	.loc	0 169 0                         # test/matmul.cpp:169
 	movq	%rax, %rbx
@@ -2679,7 +2679,7 @@ main:                                   # @main
 .Ltmp360:
 .Ltmp310:                               # EH_LABEL
 # %bb.12:                               # %invoke.cont75
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 .Ltmp311:                               # EH_LABEL
 	.loc	0 169 67                        # test/matmul.cpp:169:67
@@ -2689,7 +2689,7 @@ main:                                   # @main
 .Ltmp361:
 .Ltmp312:                               # EH_LABEL
 # %bb.13:                               # %invoke.cont77
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 .Ltmp313:                               # EH_LABEL
 	.loc	0 172 15                        # test/matmul.cpp:172:15
@@ -2699,7 +2699,7 @@ main:                                   # @main
 .Ltmp362:
 .Ltmp314:                               # EH_LABEL
 # %bb.14:                               # %invoke.cont79
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 	.loc	0 172 0                         # test/matmul.cpp:172
 	movq	%rax, %rbx
@@ -2722,7 +2722,7 @@ main:                                   # @main
 .Ltmp365:
 .Ltmp316:                               # EH_LABEL
 # %bb.15:                               # %invoke.cont83
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 .Ltmp317:                               # EH_LABEL
 	.loc	0 172 42 is_stmt 1              # test/matmul.cpp:172:42
@@ -2732,7 +2732,7 @@ main:                                   # @main
 .Ltmp366:
 .Ltmp318:                               # EH_LABEL
 # %bb.16:                               # %invoke.cont85
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 	.loc	0 0 42 is_stmt 0                # test/matmul.cpp:0:42
 	leaq	24(%rsp), %rdi
@@ -2774,7 +2774,7 @@ main:                                   # @main
 .Ltmp371:
 .LBB15_27:                              # %lpad45
 	.cfi_def_cfa_offset 192
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 .Ltmp301:                               # EH_LABEL
 	.loc	0 0 1                           # test/matmul.cpp:0:1
@@ -2792,13 +2792,13 @@ main:                                   # @main
 	jmp	.LBB15_28
 .Ltmp374:
 .LBB15_26:                              # %lpad42
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 .Ltmp298:                               # EH_LABEL
 	movq	%rax, %rbx
 .Ltmp375:
 .LBB15_28:                              # %ehcleanup50
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 	leaq	8(%rsp), %rdi
 	.loc	0 152 12 is_stmt 1              # test/matmul.cpp:152:12
@@ -2808,7 +2808,7 @@ main:                                   # @main
 	jmp	.LBB15_32
 .Ltmp377:
 .LBB15_24:                              # %lpad32
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 .Ltmp295:                               # EH_LABEL
 	movq	%rax, %rbx
@@ -2825,13 +2825,13 @@ main:                                   # @main
 	jmp	.LBB15_25
 .Ltmp380:
 .LBB15_23:                              # %lpad29
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 .Ltmp292:                               # EH_LABEL
 	movq	%rax, %rbx
 .Ltmp381:
 .LBB15_25:                              # %ehcleanup37
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 	leaq	48(%rsp), %rdi
 	.loc	0 151 12 is_stmt 1              # test/matmul.cpp:151:12
@@ -2841,7 +2841,7 @@ main:                                   # @main
 	jmp	.LBB15_33
 .Ltmp383:
 .LBB15_21:                              # %lpad19
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 .Ltmp289:                               # EH_LABEL
 	movq	%rax, %rbx
@@ -2858,13 +2858,13 @@ main:                                   # @main
 	jmp	.LBB15_22
 .Ltmp386:
 .LBB15_20:                              # %lpad16
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 .Ltmp286:                               # EH_LABEL
 	movq	%rax, %rbx
 .Ltmp387:
 .LBB15_22:                              # %ehcleanup24
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 	leaq	24(%rsp), %rdi
 	.loc	0 150 12 is_stmt 1              # test/matmul.cpp:150:12
@@ -2880,7 +2880,7 @@ main:                                   # @main
 	callq	_Unwind_Resume@PLT
 .Ltmp390:
 .LBB15_18:                              # %lpad10
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 .Ltmp283:                               # EH_LABEL
 	movq	%rax, %rbx
@@ -2903,7 +2903,7 @@ main:                                   # @main
 	callq	_Unwind_Resume@PLT
 .Ltmp394:
 .LBB15_17:                              # %lpad
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 .Ltmp280:                               # EH_LABEL
 	movq	%rax, %rbx
@@ -2916,17 +2916,17 @@ main:                                   # @main
 	callq	_Unwind_Resume@PLT
 .Ltmp396:
 .LBB15_29:                              # %lpad62
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 .Ltmp306:                               # EH_LABEL
 	jmp	.LBB15_31
 .Ltmp397:
 .LBB15_30:                              # %lpad70
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 .Ltmp319:                               # EH_LABEL
 .LBB15_31:                              # %ehcleanup87
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 	movq	%rax, %rbx
 	leaq	24(%rsp), %rdi
@@ -2934,7 +2934,7 @@ main:                                   # @main
 	callq	_ZNSt6vectorIS_IdSaIdEESaIS1_EED2Ev
 .Ltmp398:
 .LBB15_32:                              # %ehcleanup91
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 	.loc	0 0 1 is_stmt 0                 # test/matmul.cpp:0:1
 	leaq	72(%rsp), %rdi
@@ -2942,7 +2942,7 @@ main:                                   # @main
 	callq	_ZNSt6vectorIS_IdSaIdEESaIS1_EED2Ev
 .Ltmp399:
 .LBB15_33:                              # %ehcleanup93
-	#DEBUG_VALUE: main:N <- 512
+	#DEBUG_VALUE: main:N <- 1024
 	#DEBUG_VALUE: main:TILE_SIZE <- 32
 	.loc	0 0 1 is_stmt 0                 # test/matmul.cpp:0:1
 	leaq	96(%rsp), %rdi
@@ -25521,7 +25521,7 @@ _ZNSt15__new_allocatorISt6vectorIdSaIdEEE10deallocateEPS2_m: # @_ZNSt15__new_all
 	.byte	167                             # DW_AT_decl_line
 	.long	5054                            # DW_AT_type
 	.ascii	"\220\001"                      # Abbrev [144] 0x4af7:0xc DW_TAG_variable
-	.ascii	"\200\004"                      # DW_AT_const_value
+	.ascii	"\200\b"                        # DW_AT_const_value
 	.short	1298                            # DW_AT_name
 	.byte	0                               # DW_AT_decl_file
 	.byte	143                             # DW_AT_decl_line

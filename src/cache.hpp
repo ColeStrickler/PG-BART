@@ -19,7 +19,7 @@
 
 
 nlohmann::json OpenJSONFile(const std::string& filename);
-
+void WriteJSONFile(const std::string& filename, nlohmann::json& json);
 
 
 uint32_t intLog2(uint64_t x);

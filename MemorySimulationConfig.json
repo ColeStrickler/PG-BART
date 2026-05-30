@@ -10,16 +10,16 @@
 
         "l1d" : {
             "line_size": 64,
-            "sets":  32,
-            "ways":  8,
+            "sets":  2048,
+            "ways":  16,
             "banks": 1,
             "policy": "RANDOM"
         },
 
         "l2" : {
             "line_size": 64,
-            "sets":  1024,
-            "ways":  8,
+            "sets":  65536,
+            "ways":  32,
             "banks": 1,
             "policy": "RANDOM"
         }
